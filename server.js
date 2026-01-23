@@ -49,8 +49,8 @@ app.post('/api/generate', async (req, res) => {
 
     // Build competitor context
     const competitorInfo = competitors && competitors.length > 0
-      ? competitors.filter(c => c.title).map(c => 
-          `${c.asin ? `ASIN: ${c.asin}\n` : ''}Title: ${c.title}\nBullets: ${c.bullets}`
+      ? competitors.filter(c => c.title).map(c =>
+          `Title: ${c.title}\nBullets: ${c.bullets}`
         ).join('\n\n')
       : '';
 
@@ -197,6 +197,13 @@ Please help me revise or improve this listing based on my requests.`
       updatedListing.title = titleMatch[1].trim();
     }
 
+    // Try to extract updated description/HCD format
+    const descMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*?)(?=\n\n(?:BULLET|$)|$)/i);
+    if (descMatch) {
+      updatedListing = updatedListing || {};
+      updatedListing.hcdFormat = descMatch[0].trim();
+    }
+
     res.json({
       success: true,
       message: assistantMessage,
@@ -246,8 +253,21 @@ function getCategoryContext(category) {
 }
 
 function buildPrompt({ productInfo, parsedKeywords, competitorInfo, categoryContext }) {
-  const { brandName, productName, deviceName, mainMaterial, keyFeatures, uniqueSellingPoints, category } = productInfo;
-  
+  const { brandName, productName, deviceName, mainMaterial, keyFeatures, uniqueSellingPoints, category, countryOfManufacture } = productInfo;
+
+  // Determine manufacturing language based on category
+  let manufacturingBullet = '';
+  let manufacturingFeature = '';
+
+  if (countryOfManufacture && category !== 'Room Accessories') {
+    const isAssembled = category === 'Holders & Clips' || category === 'Portable Power';
+    const prefix = isAssembled ? 'Assembled' : 'Made';
+    const countryName = countryOfManufacture.toUpperCase();
+
+    manufacturingBullet = `• **${prefix.toUpperCase()} IN THE ${countryName}** – Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your device.`;
+    manufacturingFeature = `${prefix} in the ${countryOfManufacture}`;
+  }
+
   return `You are an expert Amazon listing copywriter for Head Case Designs following Amazon's 2025 best practices.
 
 CRITICAL - PRODUCT CATEGORY: ${category}
@@ -260,6 +280,7 @@ PRODUCT INFORMATION:
 - Material: ${mainMaterial}
 - Key Features: ${keyFeatures}
 - USPs: ${uniqueSellingPoints}
+${countryOfManufacture ? `- Country: ${countryOfManufacture}` : ''}
 
 TOP KEYWORDS (use naturally in first 1000 characters):
 ${parsedKeywords.map((k, i) => `${i + 1}. ${k.keyword} (${k.volume.toLocaleString()} searches/month)`).join('\n')}
@@ -274,19 +295,20 @@ AMAZON COMPLIANCE RULES:
 - Begin each bullet with **CAPITALIZED BENEFIT**
 - First 1000 characters of bullets are indexed by A10 algorithm
 
-Generate 7 Amazon bullet points in this EXACT format:
+Generate 7 Amazon bullet points in this EXACT format${manufacturingBullet ? `, with the FIRST bullet being the manufacturing bullet shown below` : ''}:
 
-• **OFFICIALLY LICENSED** – Authentic ${brandName} designs with premium print quality
+${manufacturingBullet ? manufacturingBullet + '\n' : ''}• **OFFICIALLY LICENSED** – Authentic ${brandName} designs with premium print quality
 • **PRECISION FIT** – Custom-molded for ${deviceName} with exact cutouts
 • **MILITARY-GRADE PROTECTION** – MIL-STD-810H certified with drop protection
 • **[FEATURE]** – [Benefit description]
 • **[FEATURE]** – [Benefit description]
-• **MADE IN THE UK** – Using premium ${mainMaterial} materials
-• **HEAD CASE DESIGNS QUALITY** – 15+ years expertise in premium accessories
+• **[FEATURE]** – [Benefit description]
+
+${manufacturingBullet ? 'IMPORTANT: The manufacturing bullet above MUST be the FIRST bullet in your output. Do NOT modify its text.' : ''}
 
 Also generate HCD Document Format with:
 **Product Description:** (2-3 paragraphs)
-**Features:** (bulleted list)
+**Features:** (bulleted list${manufacturingFeature ? ` - ALWAYS start with "${manufacturingFeature}" as the FIRST feature` : ''})
 **Supplied:** 1 x ${productName}
 
 Return ONLY the bullets and HCD format, no preamble.`;

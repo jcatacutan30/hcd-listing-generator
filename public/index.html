@@ -3,194 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HCD Amazon Listing Generator</title>
+    <title>HCD Listing Generator</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
-            min-height: 100vh;
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f1419;
+            color: #d4d4d4;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Left Panel - Inputs */
+        .left-panel {
+            background: #1a1f26;
+            border-right: 1px solid #2d3748;
+            overflow-y: auto;
             padding: 24px;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 32px; margin-bottom: 24px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
-        .title { font-size: 28px; font-weight: bold; color: #1e293b; margin-bottom: 4px; }
-        .subtitle { color: #64748b; font-size: 14px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        @media (max-width: 1024px) { .grid { grid-template-columns: 1fr; } }
-        .input-group { margin-bottom: 16px; }
-        .label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select, textarea { 
-            width: 100%; 
-            padding: 10px 12px; 
-            border: 1px solid #cbd5e1; 
-            border-radius: 8px; 
-            font-size: 14px;
-            font-family: inherit;
+
+        .header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2d3748;
         }
-        textarea { resize: vertical; }
-        .btn { 
-            padding: 14px 24px; 
-            border: none; 
-            border-radius: 8px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            font-size: 14px;
+
+        .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #6ee7b7;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+        }
+
+        .label {
+            display: block;
+            font-size: 11px;
+            font-weight: 500;
+            color: #a0aec0;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            background: #0f1419;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            color: #d4d4d4;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #6ee7b7;
+        }
+
+        textarea {
+            resize: vertical;
+            font-size: 12px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 13px;
             transition: all 0.2s;
         }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-primary { background: linear-gradient(to right, #2563eb, #4f46e5); color: white; }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
-        .btn-secondary { background: #f1f5f9; color: #475569; }
-        .section { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-        .section-title { font-weight: 600; font-size: 13px; margin-bottom: 12px; }
-        .result-box { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-        .result-title { font-weight: 600; margin-bottom: 8px; display: flex; justify-content: space-between; }
-        .result-content { font-size: 14px; color: #374151; line-height: 1.6; }
-        .char-count { font-size: 11px; color: #64748b; margin-top: 4px; }
-        .empty-state { text-align: center; padding: 80px 20px; color: #94a3b8; border: 2px dashed #cbd5e1; border-radius: 8px; }
-        .compliance-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-        .badge-success { background: #d1fae5; color: #065f46; }
-        .badge-warning { background: #fed7aa; color: #9a3412; }
-        .copy-btn { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; }
-        .bullet-list { list-style: none; padding: 0; }
-        .bullet-list li { padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-        .hidden { display: none; }
-        .w-full { width: 100%; }
-        .status-message { padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
-        .status-success { background: #d1fae5; color: #065f46; }
-        .status-error { background: #fee2e2; color: #991b1b; }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #6ee7b7;
+            color: #0f1419;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5dd4a6;
+        }
+
+        .btn-secondary {
+            background: #2d3748;
+            color: #d4d4d4;
+            margin-bottom: 16px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #374151;
+        }
+
+        .section {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: #0f1419;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #a0aec0;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .compact-inputs {
+            display: grid;
+            gap: 8px;
+        }
+
+        .compact-inputs input {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        /* Right Panel - Results */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            background: #0f1419;
+            overflow: hidden;
+        }
+
+        .results-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #2d3748;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-header h2 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #a0aec0;
+        }
+
+        .compliance-badge {
+            font-size: 11px;
+            padding: 4px 10px;
+            background: #065f46;
+            color: #6ee7b7;
+            border-radius: 12px;
+        }
+
+        .results-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .result-block {
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #1a1f26;
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+        }
+
+        .result-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .result-block-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6ee7b7;
+            text-transform: uppercase;
+        }
+
+        .copy-btn {
+            background: #2d3748;
+            color: #d4d4d4;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: background 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: #374151;
+        }
+
+        .result-text {
+            color: #d4d4d4;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .char-count {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 8px;
+        }
+
+        .bullet-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .bullet-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #2d3748;
+            font-size: 13px;
+            color: #d4d4d4;
+        }
+
+        .bullet-list li:last-child {
+            border-bottom: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            color: #6b7280;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            border-top: 1px solid #2d3748;
+            display: flex;
+            flex-direction: column;
+            max-height: 300px;
+        }
+
+        .chat-header {
+            padding: 12px 16px;
+            background: #1a1f26;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6ee7b7;
+            text-transform: uppercase;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #0f1419;
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .chat-message.user {
+            background: #1a1f26;
+            text-align: right;
+            margin-left: 40px;
+            border-left: 2px solid #6ee7b7;
+        }
+
+        .chat-message.assistant {
+            background: #1a1f26;
+            margin-right: 40px;
+            border-left: 2px solid #9ca3af;
+        }
+
+        .chat-message.error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        .chat-message strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 8px;
+            padding: 16px;
+            background: #1a1f26;
+            border-top: 1px solid #2d3748;
+        }
+
+        .chat-input-area textarea {
+            flex: 1;
+            min-height: 40px;
+            max-height: 80px;
+        }
+
+        .chat-input-area button {
+            width: 80px;
+            padding: 10px;
+        }
+
+        .status-message {
+            padding: 10px 16px;
+            margin-bottom: 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            background: #065f46;
+            color: #6ee7b7;
+            border-left: 3px solid #6ee7b7;
+        }
+
+        .status-message.error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border-left-color: #fca5a5;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f1419;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2d3748;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="card">
+        <!-- Left Panel: Inputs -->
+        <div class="left-panel">
             <div class="header">
-                <div>
-                    <h1 class="title">HCD Amazon Listing Generator</h1>
-                    <p class="subtitle">Backend API + Claude Sonnet 4</p>
-                </div>
-                <button class="btn btn-secondary" onclick="loadExample()">📋 Load Example</button>
+                <h1 class="title">HCD Listing Generator</h1>
+                <p class="subtitle">Claude Sonnet 4.5</p>
             </div>
 
-            <div id="status-message" style="display: none;"></div>
+            <button class="btn btn-secondary" onclick="loadExample()">Load Example</button>
 
-            <div class="grid">
-                <div>
-                    <div class="section">
-                        <div class="section-title">📊 Import CSV</div>
-                        <input type="file" accept=".csv" onchange="handleCSVUpload(event)">
-                    </div>
+            <div class="section">
+                <div class="section-title">CSV Upload</div>
+                <input type="file" accept=".csv" onchange="handleCSVUpload(event)">
+            </div>
 
-                    <div class="input-group">
-                        <label class="label">Keywords</label>
-                        <textarea id="keywords" rows="6"></textarea>
-                    </div>
+            <div class="input-group">
+                <label class="label">Keywords</label>
+                <textarea id="keywords" rows="4" placeholder="keyword, volume"></textarea>
+            </div>
 
-                    <select id="category" style="margin-bottom: 16px;">
-                        <option>Phone Cases</option>
-                        <option>Laptop Cases</option>
-                        <option>Audio Cases</option>
-                        <option>Tablet Cases</option>
-                        <option>Room Accessories</option>
-                        <option>Holders & Clips</option>
-                        <option>Portable Power</option>
-                        <option>Gaming/Office Accessory</option>
-                    </select>
+            <div class="input-group">
+                <label class="label">Category</label>
+                <select id="category">
+                    <option>Phone Cases</option>
+                    <option>Laptop Cases</option>
+                    <option>Audio Cases</option>
+                    <option>Tablet Cases</option>
+                    <option>Room Accessories</option>
+                    <option>Holders & Clips</option>
+                    <option>Portable Power</option>
+                    <option>Gaming/Office Accessory</option>
+                </select>
+            </div>
 
-                    <div class="section">
-                        <div class="section-title">Product Info</div>
-                        <div style="display: grid; gap: 12px;">
-                            <input id="brandName" placeholder="Brand Name (e.g., Manchester City FC)">
-                            <input id="designName" placeholder="Design Name (e.g., Home Kit, Logo)">
-                            <input id="lineupName" placeholder="Lineup Name (e.g., 2024/25 Season)">
-                            <input id="productName" placeholder="Product Name (e.g., Shockproof Case)">
-                            <input id="deviceName" placeholder="Device Name (e.g., iPhone 16 Pro Max)">
-                            <input id="mainMaterial" placeholder="Main Material (e.g., TPU/PC)">
-                        </div>
-                    </div>
+            <div class="section">
+                <div class="section-title">Product Info</div>
+                <div class="compact-inputs">
+                    <input id="brandName" placeholder="Brand Name">
+                    <input id="designName" placeholder="Design Name">
+                    <input id="lineupName" placeholder="Lineup Name">
+                    <input id="productName" placeholder="Product Name">
+                    <input id="deviceName" placeholder="Device Name">
+                    <input id="mainMaterial" placeholder="Material">
+                    <input id="countryOfManufacture" placeholder="Country (e.g., USA, UK, China)">
+                </div>
+            </div>
 
-                    <textarea id="keyFeatures" rows="3" placeholder="Features" style="margin-bottom: 16px;"></textarea>
+            <div class="input-group">
+                <label class="label">Key Features</label>
+                <textarea id="keyFeatures" rows="2" placeholder="MagSafe, Protection, etc."></textarea>
+            </div>
 
-                    <div class="section">
-                        <div class="section-title">🔍 Competitor Analysis (Optional)</div>
-                        <div style="display: grid; gap: 12px;">
-                            <input id="competitor1-asin" placeholder="Competitor 1 ASIN">
-                            <textarea id="competitor1-title" rows="2" placeholder="Competitor 1 Title"></textarea>
-                            <textarea id="competitor1-bullets" rows="3" placeholder="Competitor 1 Bullets"></textarea>
+            <div class="section">
+                <div class="section-title">Competitor Analysis</div>
+                <div class="compact-inputs">
+                    <textarea id="competitor1-title" rows="2" placeholder="Competitor 1 Title"></textarea>
+                    <textarea id="competitor1-bullets" rows="2" placeholder="Competitor 1 Bullets"></textarea>
+                    <textarea id="competitor2-title" rows="2" placeholder="Competitor 2 Title"></textarea>
+                    <textarea id="competitor2-bullets" rows="2" placeholder="Competitor 2 Bullets"></textarea>
+                    <textarea id="competitor3-title" rows="2" placeholder="Competitor 3 Title"></textarea>
+                    <textarea id="competitor3-bullets" rows="2" placeholder="Competitor 3 Bullets"></textarea>
+                </div>
+            </div>
 
-                            <input id="competitor2-asin" placeholder="Competitor 2 ASIN">
-                            <textarea id="competitor2-title" rows="2" placeholder="Competitor 2 Title"></textarea>
-                            <textarea id="competitor2-bullets" rows="3" placeholder="Competitor 2 Bullets"></textarea>
+            <button class="btn btn-primary" onclick="generateListing()" id="generateBtn">Generate</button>
+        </div>
 
-                            <input id="competitor3-asin" placeholder="Competitor 3 ASIN">
-                            <textarea id="competitor3-title" rows="2" placeholder="Competitor 3 Title"></textarea>
-                            <textarea id="competitor3-bullets" rows="3" placeholder="Competitor 3 Bullets"></textarea>
-                        </div>
-                    </div>
+        <!-- Right Panel: Results -->
+        <div class="right-panel">
+            <div class="results-header">
+                <h2>RESULTS</h2>
+                <span id="compliance-badge" class="compliance-badge hidden">✓ Compliant</span>
+            </div>
 
-                    <button class="btn btn-primary w-full" onclick="generateListing()" id="generateBtn">
-                        ✨ Generate
-                    </button>
+            <div class="results-content" id="results-content">
+                <div id="empty-state" class="empty-state">
+                    <div class="empty-state-icon">✨</div>
+                    <p>Generate your first listing</p>
                 </div>
 
-                <div>
-                    <div id="output-area" class="empty-state">
-                        <div style="font-size: 48px;">✨</div>
-                        <p><strong>Ready</strong></p>
+                <div id="results-area" class="hidden">
+                    <div id="status-message" style="display: none;"></div>
+
+                    <div class="result-block">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Title</span>
+                            <button class="copy-btn" onclick="copy('title')">Copy</button>
+                        </div>
+                        <div id="title-output" class="result-text"></div>
+                        <div id="title-count" class="char-count"></div>
                     </div>
 
-                    <div id="results" class="hidden">
-                        <div style="text-align: center; margin-bottom: 16px;">
-                            <span id="compliance-badge" class="compliance-badge badge-success">✓ Compliant</span>
-                            <span id="compliance-score" style="font-weight: bold; margin-left: 8px;"></span>
+                    <div class="result-block">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Bullets</span>
+                            <button class="copy-btn" onclick="copy('bullets')">Copy</button>
                         </div>
-
-                        <div class="result-box">
-                            <div class="result-title">
-                                <span>📝 Title</span>
-                                <button class="copy-btn" onclick="copy('title')">Copy</button>
-                            </div>
-                            <div id="title-output" class="result-content"></div>
-                            <div id="title-count" class="char-count"></div>
-                        </div>
-
-                        <div class="result-box" style="background: #eff6ff; border-color: #93c5fd;">
-                            <div class="result-title">
-                                <span>📌 Bullets</span>
-                                <button class="copy-btn" onclick="copy('bullets')">Copy</button>
-                            </div>
-                            <ul id="bullets-output" class="bullet-list"></ul>
-                        </div>
-
-                        <div class="result-box" style="background: #fef3c7; border-color: #fcd34d;">
-                            <div class="result-title">
-                                <span>📄 Product Description (HCD Format)</span>
-                                <button class="copy-btn" onclick="copy('description')">Copy</button>
-                            </div>
-                            <div id="description-output" class="result-content" style="white-space: pre-wrap;"></div>
-                        </div>
-
-                        <div class="result-box" style="background: #fce7f3; border-color: #f9a8d4;">
-                            <div class="result-title">
-                                <span>🔑 Backend Keywords</span>
-                                <button class="copy-btn" onclick="copy('backend')">Copy</button>
-                            </div>
-                            <div id="backend-output" class="result-content"></div>
-                        </div>
+                        <ul id="bullets-output" class="bullet-list"></ul>
                     </div>
 
-                    <div id="chat-section" class="hidden" style="margin-top: 24px;">
-                        <div class="card" style="padding: 24px;">
-                            <div class="section-title" style="font-size: 16px; margin-bottom: 16px;">💬 Revise with Claude</div>
-                            <div id="chat-history" style="max-height: 400px; overflow-y: auto; margin-bottom: 16px; padding: 16px; background: #f8fafc; border-radius: 8px; min-height: 200px;"></div>
-                            <div style="display: flex; gap: 8px;">
-                                <textarea id="chat-input" rows="3" placeholder="Ask for revisions, rewrites, or improvements... (Ctrl+Enter to send)" style="flex: 1;" onkeydown="if(event.ctrlKey && event.key === 'Enter') sendChatMessage();"></textarea>
-                                <button class="btn btn-primary" onclick="sendChatMessage()" id="chatBtn" style="align-self: flex-end;">Send</button>
-                            </div>
+                    <div class="result-block">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Description</span>
+                            <button class="copy-btn" onclick="copy('description')">Copy</button>
                         </div>
+                        <div id="description-output" class="result-text"></div>
                     </div>
+
+                    <div class="result-block">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Backend Keywords</span>
+                            <button class="copy-btn" onclick="copy('backend')">Copy</button>
+                        </div>
+                        <div id="backend-output" class="result-text"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chat-section" class="chat-section hidden">
+                <div class="chat-header">Revise with Claude</div>
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-area">
+                    <textarea id="chat-input" placeholder="Ask for revisions..." onkeydown="if(event.ctrlKey && event.key === 'Enter') sendChatMessage();"></textarea>
+                    <button class="btn btn-primary" onclick="sendChatMessage()" id="chatBtn">Send</button>
                 </div>
             </div>
         </div>
@@ -202,28 +510,25 @@
 
         function showStatus(msg, type) {
             const el = document.getElementById('status-message');
-            el.className = `status-message status-${type}`;
+            el.className = `status-message ${type === 'error' ? 'error' : ''}`;
             el.textContent = msg;
             el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', 5000);
+            setTimeout(() => el.style.display = 'none', 4000);
         }
 
         function loadExample() {
-            document.getElementById('keywords').value = `iphone 16 case, 450000\nmagsafe case, 165000\niphone case protective, 89000`;
+            document.getElementById('keywords').value = `iphone 16 case, 450000\nmagsafe case, 165000`;
             document.getElementById('brandName').value = 'Manchester City FC';
             document.getElementById('designName').value = 'Home Kit 2024/25';
             document.getElementById('lineupName').value = 'Football Club Collection';
             document.getElementById('productName').value = 'Shockproof Case';
             document.getElementById('deviceName').value = 'iPhone 16 Pro Max';
             document.getElementById('mainMaterial').value = 'TPU/PC';
+            document.getElementById('countryOfManufacture').value = 'UK';
             document.getElementById('keyFeatures').value = 'MagSafe, Military-Grade Protection';
-
-            // Example competitor data
-            document.getElementById('competitor1-asin').value = 'B0ABC123XY';
-            document.getElementById('competitor1-title').value = 'Generic Brand iPhone 16 Pro Max Case with MagSafe';
-            document.getElementById('competitor1-bullets').value = '• Protective case for iPhone\n• MagSafe compatible\n• Durable materials';
-
-            showStatus('✅ Example loaded', 'success');
+            document.getElementById('competitor1-title').value = 'Generic Brand iPhone 16 Pro Max Case';
+            document.getElementById('competitor1-bullets').value = '• Protective\n• MagSafe compatible';
+            showStatus('Example loaded', 'success');
         }
 
         function handleCSVUpload(e) {
@@ -237,7 +542,7 @@
                     return p.length >= 2 ? `${p[0].trim()}, ${p[1].trim()}` : null;
                 }).filter(Boolean).join('\n');
                 document.getElementById('keywords').value = kw;
-                showStatus(`✓ ${lines.length - 1} keywords`, 'success');
+                showStatus(`${lines.length - 1} keywords imported`, 'success');
             };
             reader.readAsText(file);
         }
@@ -245,7 +550,7 @@
         async function generateListing() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
-            btn.textContent = '⏳ Generating...';
+            btn.textContent = 'Generating...';
 
             try {
                 const keywords = document.getElementById('keywords').value.split('\n').map(l => {
@@ -253,15 +558,11 @@
                     return { keyword: p[0]?.trim(), volume: p[1]?.trim() };
                 }).filter(k => k.keyword);
 
-                // Collect competitor data
                 const competitors = [];
                 for (let i = 1; i <= 3; i++) {
-                    const asin = document.getElementById(`competitor${i}-asin`)?.value;
                     const title = document.getElementById(`competitor${i}-title`)?.value;
                     const bullets = document.getElementById(`competitor${i}-bullets`)?.value;
-                    if (title) {
-                        competitors.push({ asin, title, bullets });
-                    }
+                    if (title) competitors.push({ title, bullets });
                 }
 
                 const response = await fetch('/api/generate', {
@@ -277,6 +578,7 @@
                             productName: document.getElementById('productName').value,
                             deviceName: document.getElementById('deviceName').value,
                             mainMaterial: document.getElementById('mainMaterial').value,
+                            countryOfManufacture: document.getElementById('countryOfManufacture').value,
                             keyFeatures: document.getElementById('keyFeatures').value
                         },
                         competitors
@@ -287,35 +589,40 @@
                 if (!result.success) throw new Error(result.error);
 
                 data = result.data;
-                chatHistory = []; // Reset chat history
+                chatHistory = [];
 
-                document.getElementById('output-area').classList.add('hidden');
-                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('empty-state').classList.add('hidden');
+                document.getElementById('results-area').classList.remove('hidden');
                 document.getElementById('chat-section').classList.remove('hidden');
+                document.getElementById('compliance-badge').classList.remove('hidden');
 
-                document.getElementById('title-output').textContent = data.title;
-                document.getElementById('title-count').textContent = `${data.title.length}/200`;
+                updateDisplayedListing();
+                showStatus('Generated successfully', 'success');
 
-                const list = document.getElementById('bullets-output');
-                list.innerHTML = '';
+            } catch (error) {
+                showStatus(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate';
+            }
+        }
+
+        function updateDisplayedListing() {
+            document.getElementById('title-output').textContent = data.title || '';
+            document.getElementById('title-count').textContent = data.title ? `${data.title.length}/200` : '';
+
+            const list = document.getElementById('bullets-output');
+            list.innerHTML = '';
+            if (data.bullets) {
                 data.bullets.forEach(b => {
                     const li = document.createElement('li');
                     li.textContent = b.replace(/\*\*/g, '');
                     list.appendChild(li);
                 });
-
-                document.getElementById('description-output').textContent = data.hcdFormat || 'No description generated';
-                document.getElementById('backend-output').textContent = data.backendKeywords || 'No backend keywords';
-
-                document.getElementById('compliance-score').textContent = `${data.validation.score}/100`;
-                showStatus('✅ Generated!', 'success');
-
-            } catch (error) {
-                showStatus('❌ ' + error.message, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '✨ Generate';
             }
+
+            document.getElementById('description-output').textContent = data.hcdFormat || '';
+            document.getElementById('backend-output').textContent = data.backendKeywords || '';
         }
 
         function copy(type) {
@@ -326,7 +633,7 @@
             else if (type === 'backend') text = data.backendKeywords;
 
             navigator.clipboard.writeText(text);
-            showStatus('✅ Copied!', 'success');
+            showStatus('Copied to clipboard', 'success');
         }
 
         async function sendChatMessage() {
@@ -336,9 +643,8 @@
 
             const btn = document.getElementById('chatBtn');
             btn.disabled = true;
-            btn.textContent = '⏳';
+            btn.textContent = '...';
 
-            // Add user message to chat
             addChatMessage('user', message);
             input.value = '';
 
@@ -353,22 +659,21 @@
                     })
                 });
 
-                // Check if response is ok
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Server error: ${response.status} - ${errorText.substring(0, 100)}`);
+                    throw new Error(`Server error: ${response.status}`);
                 }
 
                 const result = await response.json();
                 if (!result.success) throw new Error(result.error);
 
-                // Add assistant message
                 addChatMessage('assistant', result.message);
 
-                // Update listing if changes were made
+                // Auto-update listing if changes detected
                 if (result.updatedListing) {
                     data = { ...data, ...result.updatedListing };
                     updateDisplayedListing();
+                    showStatus('Listing updated', 'success');
                 }
 
             } catch (error) {
@@ -381,40 +686,15 @@
         }
 
         function addChatMessage(role, content) {
-            const chatHistoryEl = document.getElementById('chat-history');
+            const messagesEl = document.getElementById('chat-messages');
             const msg = document.createElement('div');
-            msg.style.cssText = `
-                margin-bottom: 12px;
-                padding: 12px;
-                border-radius: 8px;
-                ${role === 'user' ? 'background: #dbeafe; text-align: right;' :
-                  role === 'error' ? 'background: #fee2e2; color: #991b1b;' :
-                  'background: #f0fdf4;'}
-            `;
-            msg.innerHTML = `<strong>${role === 'user' ? 'You' : role === 'error' ? 'Error' : 'Claude'}:</strong><br>${content.replace(/\n/g, '<br>')}`;
-            chatHistoryEl.appendChild(msg);
-            chatHistoryEl.scrollTop = chatHistoryEl.scrollHeight;
+            msg.className = `chat-message ${role}`;
+            msg.innerHTML = `<strong>${role === 'user' ? 'You' : role === 'error' ? 'Error' : 'Claude'}:</strong>${content.replace(/\n/g, '<br>')}`;
+            messagesEl.appendChild(msg);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
 
-            // Add to history array for API calls
             if (role !== 'error') {
                 chatHistory.push({ role, content });
-            }
-        }
-
-        function updateDisplayedListing() {
-            document.getElementById('title-output').textContent = data.title;
-            document.getElementById('title-count').textContent = `${data.title.length}/200`;
-
-            const list = document.getElementById('bullets-output');
-            list.innerHTML = '';
-            data.bullets.forEach(b => {
-                const li = document.createElement('li');
-                li.textContent = b.replace(/\*\*/g, '');
-                list.appendChild(li);
-            });
-
-            if (data.hcdFormat) {
-                document.getElementById('description-output').textContent = data.hcdFormat;
             }
         }
     </script>
