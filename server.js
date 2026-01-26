@@ -26,7 +26,8 @@ app.post('/api/generate', async (req, res) => {
     const {
       keywords,
       productInfo,
-      competitors
+      competitors,
+      productImage
     } = req.body;
 
     // Validate input
@@ -65,13 +66,42 @@ app.post('/api/generate', async (req, res) => {
       categoryContext
     });
 
+    // Build message content with optional image
+    const messageContent = [];
+
+    if (productImage) {
+      // Extract base64 data and media type
+      const matches = productImage.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        const mediaType = matches[1];
+        const base64Data = matches[2];
+
+        messageContent.push({
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: mediaType,
+            data: base64Data
+          }
+        });
+        messageContent.push({
+          type: 'text',
+          text: 'Analyze this product image and use the visual details to enhance the listing description. Focus on design elements, colors, patterns, and physical features you can see.\n\n' + prompt
+        });
+      } else {
+        messageContent.push({ type: 'text', text: prompt });
+      }
+    } else {
+      messageContent.push({ type: 'text', text: prompt });
+    }
+
     // Call Claude API
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 4000,
       messages: [{
         role: 'user',
-        content: prompt
+        content: messageContent
       }]
     });
 
@@ -183,9 +213,9 @@ Please help me revise or improve this listing based on my requests.`
     // Check if the response contains updated listing elements
     let updatedListing = null;
 
-    // Try to extract updated bullets
-    const bulletMatches = [...assistantMessage.matchAll(/[•\-]\s*\*\*(.*?)\*\*\s*[–\-]\s*(.*?)(?=\n[•\-]|\n\n|$)/gs)];
-    if (bulletMatches.length >= 5) {
+    // Try to extract updated bullets - more flexible pattern
+    const bulletMatches = [...assistantMessage.matchAll(/[•\-]\s*\*\*(.*?)\*\*\s*[–\-—]\s*(.*?)(?=\n[•\-]|\n\n|$)/gs)];
+    if (bulletMatches.length >= 3) {
       updatedListing = updatedListing || {};
       updatedListing.bullets = bulletMatches.map(match => `**${match[1].trim()}** – ${match[2].trim()}`);
     }
@@ -197,11 +227,13 @@ Please help me revise or improve this listing based on my requests.`
       updatedListing.title = titleMatch[1].trim();
     }
 
-    // Try to extract updated description/HCD format
-    const descMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*?)(?=\n\n(?:BULLET|$)|$)/i);
+    // Try to extract updated description/HCD format - more flexible
+    const descMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*?)(?=\n\n\*\*|$)/i);
     if (descMatch) {
       updatedListing = updatedListing || {};
-      updatedListing.hcdFormat = descMatch[0].trim();
+      // Get the full HCD format including Features and Supplied
+      const fullDescMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*)/i);
+      updatedListing.hcdFormat = fullDescMatch ? fullDescMatch[0].trim() : descMatch[0].trim();
     }
 
     res.json({

@@ -354,6 +354,32 @@
             display: none;
         }
 
+        /* Image Preview */
+        #imagePreview img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 6px;
+            margin-top: 8px;
+            border: 1px solid #2d3748;
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #2d3748;
+            border-top-color: #6ee7b7;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -425,6 +451,12 @@
             <div class="input-group">
                 <label class="label">Key Features</label>
                 <textarea id="keyFeatures" rows="2" placeholder="MagSafe, Protection, etc."></textarea>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Product Image (Optional)</div>
+                <input type="file" id="productImage" accept="image/*" onchange="handleImageUpload(event)">
+                <div id="imagePreview" style="margin-top: 8px;"></div>
             </div>
 
             <div class="section">
@@ -507,6 +539,7 @@
     <script>
         let data = {};
         let chatHistory = [];
+        let productImageBase64 = null;
 
         function showStatus(msg, type) {
             const el = document.getElementById('status-message');
@@ -514,6 +547,20 @@
             el.textContent = msg;
             el.style.display = 'block';
             setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                productImageBase64 = e.target.result;
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${e.target.result}" alt="Product preview">`;
+                showStatus('Image uploaded', 'success');
+            };
+            reader.readAsDataURL(file);
         }
 
         function loadExample() {
@@ -550,7 +597,7 @@
         async function generateListing() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
-            btn.textContent = 'Generating...';
+            btn.innerHTML = 'Generating<span class="loading-spinner"></span>';
 
             try {
                 const keywords = document.getElementById('keywords').value.split('\n').map(l => {
@@ -581,7 +628,8 @@
                             countryOfManufacture: document.getElementById('countryOfManufacture').value,
                             keyFeatures: document.getElementById('keyFeatures').value
                         },
-                        competitors
+                        competitors,
+                        productImage: productImageBase64
                     })
                 });
 
@@ -643,7 +691,7 @@
 
             const btn = document.getElementById('chatBtn');
             btn.disabled = true;
-            btn.textContent = '...';
+            btn.innerHTML = '<span class="loading-spinner"></span>';
 
             addChatMessage('user', message);
             input.value = '';
