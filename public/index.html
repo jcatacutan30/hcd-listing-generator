@@ -380,6 +380,132 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Background Animation */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.03;
+        }
+
+        .animated-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, #6ee7b7 0%, transparent 50%);
+            animation: pulse 8s ease-in-out infinite;
+            top: -50%;
+            left: -50%;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.03; }
+            50% { transform: scale(1.5); opacity: 0.06; }
+        }
+
+        /* Sophisticated Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 20, 25, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            backdrop-filter: blur(10px);
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            position: relative;
+        }
+
+        .loader-ring div {
+            box-sizing: border-box;
+            display: block;
+            position: absolute;
+            width: 64px;
+            height: 64px;
+            margin: 8px;
+            border: 4px solid #6ee7b7;
+            border-radius: 50%;
+            animation: loader-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            border-color: #6ee7b7 transparent transparent transparent;
+        }
+
+        .loader-ring div:nth-child(1) { animation-delay: -0.45s; }
+        .loader-ring div:nth-child(2) { animation-delay: -0.3s; }
+        .loader-ring div:nth-child(3) { animation-delay: -0.15s; }
+
+        @keyframes loader-ring {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 16px;
+            color: #6ee7b7;
+            font-weight: 600;
+            margin-bottom: 8px;
+            animation: fade 1.5s ease-in-out infinite;
+        }
+
+        .loading-subtext {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        @keyframes fade {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Particle Effect */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #6ee7b7;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 10s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 0.3; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
         /* Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -401,6 +527,22 @@
     </style>
 </head>
 <body>
+    <div class="animated-bg"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loader-ring">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="loading-text" id="loadingText">Generating listing...</div>
+            <div class="loading-subtext">Analyzing keywords and optimizing content</div>
+        </div>
+    </div>
+
     <div class="container">
         <!-- Left Panel: Inputs -->
         <div class="left-panel">
@@ -460,14 +602,15 @@
             </div>
 
             <div class="section">
-                <div class="section-title">Competitor Analysis</div>
+                <div class="section-title">Competitor Analysis (Optional)</div>
+                <p style="font-size: 11px; color: #9ca3af; margin-bottom: 12px;">Paste competitor titles and bullets for inspiration</p>
                 <div class="compact-inputs">
                     <textarea id="competitor1-title" rows="2" placeholder="Competitor 1 Title"></textarea>
-                    <textarea id="competitor1-bullets" rows="2" placeholder="Competitor 1 Bullets"></textarea>
-                    <textarea id="competitor2-title" rows="2" placeholder="Competitor 2 Title"></textarea>
-                    <textarea id="competitor2-bullets" rows="2" placeholder="Competitor 2 Bullets"></textarea>
-                    <textarea id="competitor3-title" rows="2" placeholder="Competitor 3 Title"></textarea>
-                    <textarea id="competitor3-bullets" rows="2" placeholder="Competitor 3 Bullets"></textarea>
+                    <textarea id="competitor1-bullets" rows="2" placeholder="Competitor 1 Bullets (separate with •)"></textarea>
+                    <textarea id="competitor2-title" rows="2" placeholder="Competitor 2 Title (optional)"></textarea>
+                    <textarea id="competitor2-bullets" rows="2" placeholder="Competitor 2 Bullets (optional)"></textarea>
+                    <textarea id="competitor3-title" rows="2" placeholder="Competitor 3 Title (optional)"></textarea>
+                    <textarea id="competitor3-bullets" rows="2" placeholder="Competitor 3 Bullets (optional)"></textarea>
                 </div>
             </div>
 
@@ -594,10 +737,21 @@
             reader.readAsText(file);
         }
 
+        function showLoading(text = 'Generating listing...', subtext = 'Analyzing keywords and optimizing content') {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.add('active');
+            document.getElementById('loadingText').textContent = text;
+        }
+
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.classList.remove('active');
+        }
+
         async function generateListing() {
             const btn = document.getElementById('generateBtn');
             btn.disabled = true;
-            btn.innerHTML = 'Generating<span class="loading-spinner"></span>';
+            showLoading('Generating listing...', 'Analyzing keywords and optimizing content');
 
             try {
                 const keywords = document.getElementById('keywords').value.split('\n').map(l => {
@@ -650,6 +804,7 @@
             } catch (error) {
                 showStatus(error.message, 'error');
             } finally {
+                hideLoading();
                 btn.disabled = false;
                 btn.textContent = 'Generate';
             }
@@ -692,6 +847,7 @@
             const btn = document.getElementById('chatBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="loading-spinner"></span>';
+            showLoading('Revising listing...', 'Applying your requested changes');
 
             addChatMessage('user', message);
             input.value = '';
@@ -728,6 +884,7 @@
                 console.error('Chat error:', error);
                 addChatMessage('error', error.message || 'Failed to send message');
             } finally {
+                hideLoading();
                 btn.disabled = false;
                 btn.textContent = 'Send';
             }
