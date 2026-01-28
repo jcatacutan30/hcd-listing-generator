@@ -1276,9 +1276,13 @@
             }
         }
 
+        // Store generated images for download
+        let generatedImages = [];
+
         function displayGeneratedImages(images) {
             const container = document.getElementById('images-container');
             const grid = document.getElementById('images-grid');
+            generatedImages = images;
 
             container.classList.remove('hidden');
             grid.innerHTML = '';
@@ -1287,13 +1291,13 @@
                 const card = document.createElement('div');
                 card.className = 'image-card';
 
-                if (img.url) {
+                if (img.imageData) {
                     card.innerHTML = `
-                        <img src="${img.url}" alt="${img.feature}" loading="lazy">
+                        <img src="${img.imageData}" alt="${img.feature}" loading="lazy">
                         <div class="image-card-label">${img.feature}</div>
                         <div class="image-card-actions">
-                            <button onclick="downloadImage('${img.url}', '${img.type}')">Download</button>
-                            <button onclick="window.open('${img.url}', '_blank')">View Full</button>
+                            <button onclick="downloadImage(${index})">Download</button>
+                            <button onclick="viewFullImage(${index})">View Full</button>
                         </div>
                     `;
                 } else {
@@ -1309,19 +1313,24 @@
             });
         }
 
-        async function downloadImage(url, filename) {
+        function viewFullImage(index) {
+            const img = generatedImages[index];
+            if (!img || !img.imageData) return;
+            const win = window.open();
+            win.document.write(`<img src="${img.imageData}" style="max-width:100%">`);
+        }
+
+        function downloadImage(index) {
             try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                const blobUrl = URL.createObjectURL(blob);
+                const img = generatedImages[index];
+                if (!img || !img.imageData) return;
 
                 const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = `hcd-${filename}-${Date.now()}.png`;
+                a.href = img.imageData;
+                a.download = `hcd-${img.type}-${Date.now()}.png`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                URL.revokeObjectURL(blobUrl);
 
                 showStatus('Image downloaded', 'success');
             } catch (error) {

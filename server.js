@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
-const OpenAI = require('openai');
+const { GoogleGenAI } = require('@google/genai');
 const path = require('path');
 
 const app = express();
@@ -12,13 +12,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize Google Gemini client
+const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // Health check endpoint
@@ -348,22 +346,31 @@ app.post('/api/generate-images', async (req, res) => {
       });
     });
 
-    // Generate all images in parallel
-    console.log(`Generating ${imagePrompts.length} images...`);
+    // Generate all images using Gemini Nano Banana
+    console.log(`Generating ${imagePrompts.length} images with Gemini...`);
     const imageGenerations = imagePrompts.map(async (imgPrompt) => {
       try {
-        const response = await openai.images.generate({
-          model: 'dall-e-3',
-          prompt: imgPrompt.prompt,
-          n: 1,
-          size: '1024x1024',
-          quality: 'standard'
+        const response = await genai.models.generateContent({
+          model: 'gemini-2.5-flash-preview-05-20',
+          contents: imgPrompt.prompt,
+          config: {
+            responseModalities: ['Text', 'Image']
+          }
         });
+
+        // Extract base64 image from response
+        let imageData = null;
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData) {
+            imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            break;
+          }
+        }
 
         return {
           type: imgPrompt.type,
           feature: imgPrompt.feature || imgPrompt.type,
-          url: response.data[0].url,
+          imageData: imageData,
           prompt: imgPrompt.prompt
         };
       } catch (error) {
@@ -371,7 +378,7 @@ app.post('/api/generate-images', async (req, res) => {
         return {
           type: imgPrompt.type,
           feature: imgPrompt.feature || imgPrompt.type,
-          url: null,
+          imageData: null,
           error: error.message
         };
       }
@@ -382,7 +389,7 @@ app.post('/api/generate-images', async (req, res) => {
     res.json({
       success: true,
       images,
-      count: images.filter(img => img.url).length
+      count: images.filter(img => img.imageData).length
     });
 
   } catch (error) {
