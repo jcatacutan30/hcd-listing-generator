@@ -557,70 +557,88 @@
             transform: none;
         }
 
-        .images-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .image-card {
+        .concept-card {
             background: #1a1f26;
             border: 1px solid #2d3748;
             border-radius: 8px;
-            overflow: hidden;
-            transition: transform 0.2s;
+            padding: 16px;
+            margin-bottom: 12px;
         }
 
-        .image-card:hover {
-            transform: scale(1.02);
+        .concept-card:hover {
             border-color: #6ee7b7;
         }
 
-        .image-card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: #0f1419;
-        }
-
-        .image-card-label {
-            padding: 8px 12px;
-            font-size: 11px;
-            color: #9ca3af;
-            text-align: center;
-            background: #0f1419;
-            border-top: 1px solid #2d3748;
-        }
-
-        .image-card-actions {
-            padding: 8px;
-            display: flex;
-            gap: 8px;
-            background: #0f1419;
-        }
-
-        .image-card-actions button {
-            flex: 1;
-            padding: 6px;
-            background: #2d3748;
-            border: none;
-            border-radius: 4px;
-            color: #d4d4d4;
+        .concept-number {
+            display: inline-block;
+            background: #6ee7b7;
+            color: #0f1419;
             font-size: 10px;
-            cursor: pointer;
-            transition: background 0.2s;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
         }
 
-        .image-card-actions button:hover {
-            background: #374151;
+        .concept-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #6ee7b7;
+            margin-bottom: 10px;
         }
 
-        .image-error {
-            padding: 12px;
-            text-align: center;
-            color: #fca5a5;
+        .concept-section {
+            margin-bottom: 10px;
+        }
+
+        .concept-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .concept-section-text {
+            font-size: 12px;
+            color: #d4d4d4;
+            line-height: 1.5;
+        }
+
+        .prompt-box {
+            background: #0f1419;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            padding: 10px 12px;
             font-size: 11px;
+            color: #a0aec0;
+            line-height: 1.5;
+            font-family: monospace;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .prompt-box:hover {
+            border-color: #6ee7b7;
+        }
+
+        .copy-prompt-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #6ee7b7;
+            color: #0f1419;
+            border: none;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .copy-prompt-btn:hover {
+            background: #34d399;
         }
 
         /* Session Restore Banner */
@@ -849,16 +867,16 @@
                         <div id="backend-output" class="result-text"></div>
                     </div>
 
-                    <!-- Image Generation Section -->
+                    <!-- Image Concepts Section -->
                     <div class="image-gen-section">
-                        <button class="btn-generate-images" onclick="generateImages()" id="generateImagesBtn">
-                            🎨 Generate Inspiration Images
+                        <button class="btn-generate-images" onclick="generateImageConcepts()" id="generateImagesBtn">
+                            💡 Generate Image Concepts
                         </button>
                         <div id="images-container" class="hidden">
                             <div class="result-block-header">
-                                <span class="result-block-title">Listing Feature Images</span>
+                                <span class="result-block-title">Listing Image Concepts</span>
                             </div>
-                            <div id="images-grid" class="images-grid"></div>
+                            <div id="concepts-grid"></div>
                         </div>
                     </div>
                 </div>
@@ -1225,7 +1243,9 @@
             }
         }
 
-        async function generateImages() {
+        let generatedConcepts = [];
+
+        async function generateImageConcepts() {
             if (!data.bullets || data.bullets.length === 0) {
                 showStatus('Please generate a listing first', 'error');
                 return;
@@ -1233,11 +1253,10 @@
 
             const btn = document.getElementById('generateImagesBtn');
             btn.disabled = true;
-            btn.innerHTML = '🎨 Generating 6 images...';
-            showLoading('Generating inspiration images...', 'Creating product photography concepts with AI');
+            btn.innerHTML = '💡 Generating concepts...';
+            showLoading('Generating image concepts...', 'Creating layout plans and Gemini prompts with AI');
 
             try {
-                // Gather product info
                 const productInfo = {
                     brandName: document.getElementById('brandName').value,
                     designName: document.getElementById('designName').value,
@@ -1254,88 +1273,72 @@
                     })
                 });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Server error: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Server error: ${response.status}`);
 
                 const result = await response.json();
                 if (!result.success) throw new Error(result.error);
 
-                // Display images
-                displayGeneratedImages(result.images);
-                showStatus(`Generated ${result.count} images successfully`, 'success');
+                generatedConcepts = result.concepts;
+                displayConcepts(result.concepts);
+                showStatus(`Generated ${result.count} image concepts`, 'success');
 
             } catch (error) {
-                console.error('Image generation error:', error);
-                showStatus(error.message || 'Failed to generate images', 'error');
+                console.error('Concept generation error:', error);
+                showStatus(error.message || 'Failed to generate concepts', 'error');
             } finally {
                 hideLoading();
                 btn.disabled = false;
-                btn.innerHTML = '🎨 Generate Inspiration Images';
+                btn.innerHTML = '💡 Generate Image Concepts';
             }
         }
 
-        // Store generated images for download
-        let generatedImages = [];
-
-        function displayGeneratedImages(images) {
+        function displayConcepts(concepts) {
             const container = document.getElementById('images-container');
-            const grid = document.getElementById('images-grid');
-            generatedImages = images;
+            const grid = document.getElementById('concepts-grid');
 
             container.classList.remove('hidden');
             grid.innerHTML = '';
 
-            images.forEach((img, index) => {
+            concepts.forEach((concept, index) => {
                 const card = document.createElement('div');
-                card.className = 'image-card';
+                card.className = 'concept-card';
 
-                if (img.imageData) {
-                    card.innerHTML = `
-                        <img src="${img.imageData}" alt="${img.feature}" loading="lazy">
-                        <div class="image-card-label">${img.feature}</div>
-                        <div class="image-card-actions">
-                            <button onclick="downloadImage(${index})">Download</button>
-                            <button onclick="viewFullImage(${index})">View Full</button>
+                const textOverlays = Array.isArray(concept.textOverlays)
+                    ? concept.textOverlays.map(t => `<li>${t}</li>`).join('')
+                    : `<li>${concept.textOverlays}</li>`;
+
+                card.innerHTML = `
+                    <span class="concept-number">IMAGE ${index + 1}</span>
+                    <div class="concept-title">${concept.title}</div>
+                    <div class="concept-section">
+                        <div class="concept-section-label">Layout Plan</div>
+                        <div class="concept-section-text">${concept.layout}</div>
+                    </div>
+                    <div class="concept-section">
+                        <div class="concept-section-label">Text Overlays</div>
+                        <div class="concept-section-text"><ul style="margin:4px 0;padding-left:18px">${textOverlays}</ul></div>
+                    </div>
+                    <div class="concept-section">
+                        <div class="concept-section-label">Gemini Prompt</div>
+                        <div class="prompt-box" onclick="copyPrompt(${index})">
+                            <button class="copy-prompt-btn">Copy</button>
+                            ${concept.geminiPrompt}
                         </div>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div class="image-error">
-                            Failed to generate ${img.feature}<br>
-                            <small>${img.error || 'Unknown error'}</small>
-                        </div>
-                    `;
-                }
+                    </div>
+                `;
 
                 grid.appendChild(card);
             });
         }
 
-        function viewFullImage(index) {
-            const img = generatedImages[index];
-            if (!img || !img.imageData) return;
-            const win = window.open();
-            win.document.write(`<img src="${img.imageData}" style="max-width:100%">`);
-        }
-
-        function downloadImage(index) {
-            try {
-                const img = generatedImages[index];
-                if (!img || !img.imageData) return;
-
-                const a = document.createElement('a');
-                a.href = img.imageData;
-                a.download = `hcd-${img.type}-${Date.now()}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                showStatus('Image downloaded', 'success');
-            } catch (error) {
-                showStatus('Download failed', 'error');
-            }
+        function copyPrompt(index) {
+            const concept = generatedConcepts[index];
+            if (!concept) return;
+            navigator.clipboard.writeText(concept.geminiPrompt).then(() => {
+                showStatus('Gemini prompt copied to clipboard', 'success');
+            }).catch(() => {
+                showStatus('Failed to copy prompt', 'error');
+            });
         }
     </script>
 </body>

@@ -265,131 +265,59 @@ app.post('/api/generate-images', async (req, res) => {
     }
 
     const { brandName, designName, productName, category } = productInfo;
-    const caseDescription = designName || 'stylish';
 
-    // Determine brand-specific background for lifestyle image
-    let lifestyleBackground = 'urban cityscape';
-    if (brandName) {
-      const brand = brandName.toLowerCase();
-      if (brand.includes('manchester city') || brand.includes('mcfc')) {
-        lifestyleBackground = 'Etihad Stadium with blurred blue seats in background';
-      } else if (brand.includes('manchester united') || brand.includes('mufc')) {
-        lifestyleBackground = 'Old Trafford stadium with blurred red seats in background';
-      } else if (brand.includes('liverpool')) {
-        lifestyleBackground = 'Anfield stadium with blurred red seats in background';
-      } else if (brand.includes('chelsea')) {
-        lifestyleBackground = 'Stamford Bridge stadium with blurred blue seats in background';
-      } else if (brand.includes('arsenal')) {
-        lifestyleBackground = 'Emirates Stadium with blurred red seats in background';
-      } else if (brand.includes('nfl') || brand.includes('football')) {
-        lifestyleBackground = 'American football stadium with blurred seats in background';
-      } else if (brand.includes('nba') || brand.includes('basketball')) {
-        lifestyleBackground = 'basketball court with blurred arena seats in background';
-      }
-    }
-
-    // Build image generation prompts
-    const imagePrompts = [
-      // 1. Main Product Image
-      {
-        type: 'main',
-        prompt: `Professional product photography of an iPhone 17 Pro Max with a ${caseDescription} ${brandName || ''} phone case. Clean pure white background. The phone is shown in an artistic composition with the front screen view overlapping halfway with the back view, displaying both the screen and the case design simultaneously. Studio lighting, high detail, commercial quality, sharp focus, 4k resolution.`
-      },
-      // 2. Lifestyle Image
-      {
-        type: 'lifestyle',
-        prompt: `Lifestyle product photography of a hand holding an iPhone 17 Pro Max with a ${caseDescription} ${brandName || ''} phone case. Background shows ${lifestyleBackground}, beautifully blurred with bokeh effect. Natural lighting, professional photography, authentic hand model, casual grip, showing the phone case design clearly, high quality, 4k resolution.`
-      }
-    ];
-
-    // 3-6. Feature-based images (extract from bullets, excluding manufacturing and licensing)
+    // Filter bullets - exclude manufacturing and licensing
     const filteredBullets = bullets.filter(bullet => {
-      const upperBullet = bullet.toUpperCase();
-      // Exclude manufacturing and licensing bullets
-      return !upperBullet.includes('MADE IN') &&
-             !upperBullet.includes('ASSEMBLED IN') &&
-             !upperBullet.includes('OFFICIALLY LICENSED');
+      const upper = bullet.toUpperCase();
+      return !upper.includes('MADE IN') && !upper.includes('ASSEMBLED IN') && !upper.includes('OFFICIALLY LICENSED');
+    });
+    const topFeatures = filteredBullets.slice(0, 4).map(b => {
+      const m = b.match(/\*\*(.*?)\*\*/);
+      return m ? m[1] : b.substring(0, 50);
     });
 
-    // Take top 4 physical/protective feature bullets
-    const featureBullets = filteredBullets.slice(0, 4);
-    featureBullets.forEach((bullet, index) => {
-      // Extract feature name from bullet (text before the dash)
-      const featureMatch = bullet.match(/\*\*(.*?)\*\*/);
-      const featureName = featureMatch ? featureMatch[1] : `Feature ${index + 1}`;
+    // Use Claude to generate image concepts and prompts
+    const conceptPrompt = `You are a creative director for Amazon listing photography for Head Case Designs.
 
-      // Build feature-specific prompt
-      let featurePrompt = '';
-      const feature = featureName.toLowerCase();
+PRODUCT: ${brandName || ''} ${designName || ''} ${productName || ''}
+CATEGORY: ${category}
+TOP FEATURES: ${topFeatures.join(', ')}
 
-      if (feature.includes('protection') || feature.includes('military') || feature.includes('drop')) {
-        featurePrompt = `Close-up product photography showcasing the protective features of an iPhone 17 Pro Max ${caseDescription} phone case. Focus on reinforced corners, raised edges, and shock-absorbing materials. Dynamic angle showing the case's protective structure. Clean background, studio lighting, high detail.`;
-      } else if (feature.includes('magsafe') || feature.includes('magnetic') || feature.includes('wireless')) {
-        featurePrompt = `Product photography of an iPhone 17 Pro Max ${caseDescription} phone case hovering above a MagSafe charger, showing magnetic alignment with visible magnetic ring. Clean modern background, soft lighting with slight glow effect, levitation photography style, high quality.`;
-      } else if (feature.includes('grip') || feature.includes('texture')) {
-        featurePrompt = `Extreme close-up macro photography of an iPhone 17 Pro Max ${caseDescription} phone case showing detailed texture and grip pattern. Hand touching the case surface, highlighting tactile quality. Shallow depth of field, professional lighting, high detail, 4k resolution.`;
-      } else if (feature.includes('design') || feature.includes('licensed') || feature.includes('authentic')) {
-        featurePrompt = `Artistic product photography of an iPhone 17 Pro Max ${caseDescription} ${brandName || ''} phone case, showcasing the official licensed design artwork clearly. Angled view, dramatic lighting highlighting the design details, premium presentation, clean background, high quality.`;
-      } else if (feature.includes('slim') || feature.includes('lightweight') || feature.includes('pocket')) {
-        featurePrompt = `Product photography of an iPhone 17 Pro Max ${caseDescription} phone case sliding smoothly into a jeans pocket. Side view showing the slim profile. Natural lighting, lifestyle context, demonstrating portability and sleek design, high quality.`;
-      } else if (feature.includes('button') || feature.includes('responsive') || feature.includes('tactile')) {
-        featurePrompt = `Close-up product photography of a finger pressing the tactile buttons on an iPhone 17 Pro Max ${caseDescription} phone case. Focus on button area with shallow depth of field. Clean background, soft lighting, showing responsive button design, high detail.`;
-      } else {
-        // Generic feature showcase
-        featurePrompt = `Professional product photography highlighting the ${featureName.toLowerCase()} feature of an iPhone 17 Pro Max ${caseDescription} ${brandName || ''} phone case. Dynamic angle, clean background, studio lighting, high detail, commercial quality.`;
-      }
+Generate 6 listing image concepts. For each image, provide:
+1. **Image Title** (e.g., "Main Product Shot")
+2. **Layout Description** - Detailed description of the image layout, composition, camera angle, lighting
+3. **Text Overlays** - Any text/callouts that should appear on the image and where they should be positioned
+4. **Gemini Prompt** - A ready-to-paste prompt for Gemini AI image generation
 
-      imagePrompts.push({
-        type: `feature-${index + 1}`,
-        feature: featureName,
-        prompt: featurePrompt
-      });
+The 6 images should be:
+1. MAIN IMAGE - Clean white background. For phone/tablet cases: iPhone 17 Pro Max with the case, front screen overlapping halfway with back view showing case design. Studio lighting.
+2. LIFESTYLE IMAGE - Brand-specific context. For ${brandName || 'the brand'}: use a relevant branded environment as blurred background. Hand model holding the phone with case.
+3. FEATURE IMAGE - Based on "${topFeatures[0] || 'Protection'}" feature. Close-up showcasing this physical feature.
+4. FEATURE IMAGE - Based on "${topFeatures[1] || 'Precision Fit'}" feature. Close-up showcasing this physical feature.
+5. FEATURE IMAGE - Based on "${topFeatures[2] || 'Grip'}" feature. Close-up showcasing this physical feature.
+6. FEATURE IMAGE - Based on "${topFeatures[3] || 'Slim Design'}" feature. Close-up showcasing this physical feature.
+
+For each Gemini prompt, make it detailed and specific for product photography. Do NOT include any trademark logos or copyrighted imagery in the prompts.
+
+Return as JSON array with objects: { "title": "", "layout": "", "textOverlays": "", "geminiPrompt": "" }
+Return ONLY the JSON array, no markdown code fences.`;
+
+    console.log('Generating image concepts with Claude...');
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: conceptPrompt }]
     });
 
-    // Generate all images using Gemini Nano Banana
-    console.log(`Generating ${imagePrompts.length} images with Gemini...`);
-    const imageGenerations = imagePrompts.map(async (imgPrompt) => {
-      try {
-        const response = await genai.models.generateContent({
-          model: 'gemini-2.0-flash-exp-image-generation',
-          contents: imgPrompt.prompt,
-          config: {
-            responseModalities: ['Text', 'Image']
-          }
-        });
-
-        // Extract base64 image from response
-        let imageData = null;
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            imageData = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            break;
-          }
-        }
-
-        return {
-          type: imgPrompt.type,
-          feature: imgPrompt.feature || imgPrompt.type,
-          imageData: imageData,
-          prompt: imgPrompt.prompt
-        };
-      } catch (error) {
-        console.error(`Error generating ${imgPrompt.type} image:`, error);
-        return {
-          type: imgPrompt.type,
-          feature: imgPrompt.feature || imgPrompt.type,
-          imageData: null,
-          error: error.message
-        };
-      }
-    });
-
-    const images = await Promise.all(imageGenerations);
+    const responseText = response.content[0].text.trim();
+    // Parse JSON - handle potential markdown fences
+    const jsonText = responseText.replace(/^```json?\n?/, '').replace(/\n?```$/, '');
+    const concepts = JSON.parse(jsonText);
 
     res.json({
       success: true,
-      images,
-      count: images.filter(img => img.imageData).length
+      concepts,
+      count: concepts.length
     });
 
   } catch (error) {
