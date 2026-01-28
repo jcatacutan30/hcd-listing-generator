@@ -678,9 +678,19 @@
             <div class="section">
                 <div class="section-title">Product Info</div>
                 <div class="compact-inputs">
+                    <select id="brandSelect" onchange="onBrandSelect()">
+                        <option value="">-- Select Brand --</option>
+                        <option value="Liverpool Football Club">Liverpool Football Club</option>
+                        <option value="Manchester City FC">Manchester City FC</option>
+                        <option value="Harry Potter">Harry Potter</option>
+                        <option value="WWE">WWE</option>
+                        <option value="NBA">NBA</option>
+                        <option value="NFL">NFL</option>
+                        <option value="custom">Other (Custom)</option>
+                    </select>
                     <input id="brandName" placeholder="Brand Name">
-                    <input id="designName" placeholder="Design Name">
                     <input id="lineupName" placeholder="Lineup Name">
+                    <input id="designName" placeholder="Design Name">
                     <input id="productName" placeholder="Product Name">
                     <input id="deviceName" placeholder="Device Name">
                     <input id="mainMaterial" placeholder="Material">
@@ -794,6 +804,44 @@
         let data = {};
         let chatHistory = [];
         let productImageBase64 = null;
+
+        // Brand presets with default lineup and design names
+        const brandPresets = {
+            'Liverpool Football Club': { lineup: '2026/27 Kits', design: 'Home' },
+            'Manchester City FC': { lineup: '2026/27 Kits', design: 'Home' },
+            'Harry Potter': { lineup: 'Character Art', design: 'Snape' },
+            'WWE': { lineup: 'John Cena', design: "U Can't C Me" },
+            'NBA': { lineup: 'Los Angeles Lakers', design: 'Vertical Banner' },
+            'NFL': { lineup: '2026 Super Bowl LX', design: 'Patriots Go Pats' }
+        };
+
+        function onBrandSelect() {
+            const brandSelect = document.getElementById('brandSelect');
+            const brandNameInput = document.getElementById('brandName');
+            const lineupInput = document.getElementById('lineupName');
+            const designInput = document.getElementById('designName');
+            const selectedValue = brandSelect.value;
+
+            if (selectedValue === 'custom' || selectedValue === '') {
+                // Custom brand - clear and enable all fields
+                brandNameInput.value = '';
+                brandNameInput.disabled = false;
+                brandNameInput.style.display = 'block';
+                lineupInput.value = '';
+                designInput.value = '';
+            } else {
+                // Preset brand - auto-fill fields
+                brandNameInput.value = selectedValue;
+                brandNameInput.disabled = true;
+                brandNameInput.style.display = 'none';
+
+                const preset = brandPresets[selectedValue];
+                if (preset) {
+                    lineupInput.value = preset.lineup;
+                    designInput.value = preset.design;
+                }
+            }
+        }
 
         function showStatus(msg, type) {
             const el = document.getElementById('status-message');
