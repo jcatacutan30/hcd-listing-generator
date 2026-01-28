@@ -496,8 +496,8 @@ function buildPrompt({ productInfo, parsedKeywords, competitorInfo, categoryCont
     // Determine manufacturing bullet text based on product type
     let manufacturingText = '';
 
-    if (productNameLower.includes('floor mat') || productNameLower.includes('gaming mat') || productNameLower.includes('area rug') || productNameLower.includes('gaming rug')) {
-      // Floor mats / Gaming mats
+    if (productNameLower.includes('floor mat') || productNameLower.includes('gaming mat') || productNameLower.includes('desk mat') || productNameLower.includes('area rug') || productNameLower.includes('gaming rug')) {
+      // Floor mats / Gaming mats / Desk mats
       manufacturingText = `Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your gaming space. This gaming rug and area rug features a thick, soft crystal velvet surface with plush texture and reinforced stitched edges, delivering professional-grade performance as both stylish room décor and functional floor protection.`;
     } else if (category === 'Room Accessories' || !deviceName || deviceName === 'N/A') {
       // Products without specific devices
