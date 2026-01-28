@@ -427,6 +427,59 @@ function getCategoryContext(category) {
   return contexts[category] || '';
 }
 
+// Brand descriptions with {product} placeholder for dynamic product type
+const brandDescriptions = {
+  'Liverpool Football Club': "Are you a true 'Red' or know someone that is? Why not treat yourself or someone special to an official Liverpool Football Club licensed {product}.",
+  'Manchester City FC': "Show your support for the mighty City and let your Blue Moon pride be seen with this official Manchester City Football Club {product}!",
+  'Harry Potter': "Immerse yourself in the Wizarding world of Harry Potter with the widest range of official Harry Potter {products} in the market!",
+  'WWE': "Are you a fan of the WWE or know someone that is? From all your current superstars, John Cena, Brock Lesnar, Triple H to the classic stars Hulk Hogan, Stone Cold Steve Austin, The Rock, The Undertaker and their iconic logos and quotes, we have you covered with the largest collection of official WWE {products} in the market!",
+  'NBA': "Show your love for your favourite NBA team with these official National Basketball Association {products}! No matter whom you support, we got you covered with all 30 Teams fighting for glory with these official NBA {products}!",
+  'NFL': "Show your love for your favourite NFL team with these official National Football League {products}! No matter whom you support, we got you covered with all 32 Teams fighting for glory with these official NFL {products}!"
+};
+
+// Get product terminology based on category and product name
+function getProductTerminology(category, productName) {
+  const productNameLower = (productName || '').toLowerCase();
+
+  // Check product name for specific product types
+  if (productNameLower.includes('magnetic car phone mount with wireless charger') ||
+      productNameLower.includes('car charger') || productNameLower.includes('wireless car')) {
+    return { singular: 'Magnetic Car Phone Mount with Wireless Charger', plural: 'Magnetic Car Phone Mounts with Wireless Chargers' };
+  }
+  if (productNameLower.includes('magnetic car phone mount') || productNameLower.includes('magnetic mount')) {
+    return { singular: 'Magnetic Car Phone Mount', plural: 'Magnetic Car Phone Mounts' };
+  }
+  if (productNameLower.includes('car phone mount') || productNameLower.includes('car mount') || productNameLower.includes('car clip')) {
+    return { singular: 'Car Phone Mount', plural: 'Car Phone Mounts' };
+  }
+  if (productNameLower.includes('desk mat')) {
+    return { singular: 'Desk Mat', plural: 'Desk Mats' };
+  }
+  if (productNameLower.includes('water bottle')) {
+    return { singular: 'Water Bottle', plural: 'Water Bottles' };
+  }
+  if (productNameLower.includes('gaming floor mat') || productNameLower.includes('floor mat')) {
+    return { singular: 'Gaming Floor Mat', plural: 'Gaming Floor Mats' };
+  }
+  if (productNameLower.includes('mouse pad') || productNameLower.includes('mousepad')) {
+    return { singular: 'Mouse Pad', plural: 'Mouse Pads' };
+  }
+
+  // Category-based defaults
+  const categoryTerms = {
+    'Phone Cases': { singular: 'phone case', plural: 'phone cases' },
+    'Laptop Cases': { singular: 'laptop case', plural: 'laptop cases' },
+    'Audio Cases': { singular: 'case', plural: 'cases' },
+    'Tablet Cases': { singular: 'tablet and phone case', plural: 'tablet and phone cases' },
+    'Room Accessories': { singular: 'product', plural: 'products' },
+    'Holders & Clips': { singular: 'holder', plural: 'holders' },
+    'Portable Power': { singular: 'charger', plural: 'chargers' },
+    'Gaming/Office Accessory': { singular: 'accessory', plural: 'accessories' }
+  };
+
+  return categoryTerms[category] || { singular: 'case', plural: 'cases' };
+}
+
 function buildPrompt({ productInfo, parsedKeywords, competitorInfo, categoryContext }) {
   const { brandName, productName, deviceName, mainMaterial, keyFeatures, uniqueSellingPoints, category, countryOfManufacture } = productInfo;
 
@@ -441,6 +494,16 @@ function buildPrompt({ productInfo, parsedKeywords, competitorInfo, categoryCont
 
     manufacturingBullet = `• **${prefix.toUpperCase()} IN THE ${countryName}** – Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your device.`;
     manufacturingFeature = `${prefix} in the ${countryOfManufacture}`;
+  }
+
+  // Get brand description with correct product terminology
+  let brandDescriptionSection = '';
+  if (brandName && brandDescriptions[brandName]) {
+    const terms = getProductTerminology(category, productName);
+    let brandDesc = brandDescriptions[brandName];
+    brandDesc = brandDesc.replace(/\{product\}/g, terms.singular);
+    brandDesc = brandDesc.replace(/\{products\}/g, terms.plural);
+    brandDescriptionSection = `\nBRAND DESCRIPTION (MUST appear at the BEGINNING of Product Description, BEFORE any product-specific content):\n"${brandDesc}"\n`;
   }
 
   return `You are an expert Amazon listing copywriter for Head Case Designs following Amazon's 2025 best practices.
@@ -460,8 +523,7 @@ ${countryOfManufacture ? `- Country: ${countryOfManufacture}` : ''}
 TOP KEYWORDS (use naturally in first 1000 characters):
 ${parsedKeywords.map((k, i) => `${i + 1}. ${k.keyword} (${k.volume.toLocaleString()} searches/month)`).join('\n')}
 
-${competitorInfo ? `COMPETITORS (analyze but differentiate from):\n${competitorInfo}\n\n` : ''}
-
+${competitorInfo ? `COMPETITORS (analyze but differentiate from):\n${competitorInfo}\n\n` : ''}${brandDescriptionSection}
 AMAZON COMPLIANCE RULES:
 - Title max 200 characters (optimal 150)
 - NO forbidden characters: ! $ ? _ { } ^ ¬ ¦
@@ -482,7 +544,7 @@ ${manufacturingBullet ? manufacturingBullet + '\n' : ''}• **OFFICIALLY LICENSE
 ${manufacturingBullet ? 'IMPORTANT: The manufacturing bullet above MUST be the FIRST bullet in your output. Do NOT modify its text.' : ''}
 
 Also generate HCD Document Format with:
-**Product Description:** (2-3 paragraphs)
+**Product Description:** (2-3 paragraphs${brandDescriptionSection ? ' - MUST start with the BRAND DESCRIPTION above as the FIRST paragraph, followed by product-specific content' : ''})
 **Features:** (bulleted list${manufacturingFeature ? ` - ALWAYS start with "${manufacturingFeature}" as the FIRST feature` : ''})
 **Supplied:** 1 x ${productName}
 
