@@ -351,7 +351,7 @@ app.post('/api/generate-images', async (req, res) => {
     const imageGenerations = imagePrompts.map(async (imgPrompt) => {
       try {
         const response = await genai.models.generateContent({
-          model: 'gemini-2.5-flash-preview-05-20',
+          model: 'gemini-2.0-flash-exp',
           contents: imgPrompt.prompt,
           config: {
             responseModalities: ['Text', 'Image']
