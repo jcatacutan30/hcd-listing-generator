@@ -487,12 +487,27 @@ function buildPrompt({ productInfo, parsedKeywords, competitorInfo, categoryCont
   let manufacturingBullet = '';
   let manufacturingFeature = '';
 
-  if (countryOfManufacture && category !== 'Room Accessories') {
+  if (countryOfManufacture) {
     const isAssembled = category === 'Holders & Clips' || category === 'Portable Power';
     const prefix = isAssembled ? 'Assembled' : 'Made';
     const countryName = countryOfManufacture.toUpperCase();
+    const productNameLower = (productName || '').toLowerCase();
 
-    manufacturingBullet = `• **${prefix.toUpperCase()} IN THE ${countryName}** – Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your device.`;
+    // Determine manufacturing bullet text based on product type
+    let manufacturingText = '';
+
+    if (productNameLower.includes('floor mat') || productNameLower.includes('gaming mat') || productNameLower.includes('area rug') || productNameLower.includes('gaming rug')) {
+      // Floor mats / Gaming mats
+      manufacturingText = `Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your gaming space. This gaming rug and area rug features a thick, soft crystal velvet surface with plush texture and reinforced stitched edges, delivering professional-grade performance as both stylish room décor and functional floor protection.`;
+    } else if (category === 'Room Accessories' || !deviceName || deviceName === 'N/A') {
+      // Products without specific devices
+      manufacturingText = `Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision.`;
+    } else {
+      // Products with devices (phone cases, tablet cases, etc.)
+      manufacturingText = `Using premium materials and cutting-edge production techniques, ensuring superior quality, durability, and precision fit for your device.`;
+    }
+
+    manufacturingBullet = `• **${prefix.toUpperCase()} IN THE ${countryName}** – ${manufacturingText}`;
     manufacturingFeature = `${prefix} in the ${countryOfManufacture}`;
   }
 
