@@ -622,10 +622,85 @@
             color: #fca5a5;
             font-size: 11px;
         }
+
+        /* Session Restore Banner */
+        .restore-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9998;
+            background: linear-gradient(135deg, #1a1f26 0%, #0f1419 100%);
+            border-bottom: 1px solid #6ee7b7;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideBannerDown 0.4s ease-out;
+        }
+
+        @keyframes slideBannerDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .restore-banner-text {
+            font-size: 13px;
+            color: #d4d4d4;
+        }
+
+        .restore-banner-text span {
+            color: #6ee7b7;
+            font-weight: 600;
+        }
+
+        .restore-banner-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .restore-banner-actions button {
+            padding: 6px 16px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-restore {
+            background: #6ee7b7;
+            color: #0f1419;
+        }
+
+        .btn-restore:hover {
+            background: #34d399;
+        }
+
+        .btn-dismiss {
+            background: #2d3748;
+            color: #9ca3af;
+        }
+
+        .btn-dismiss:hover {
+            background: #374151;
+        }
     </style>
 </head>
 <body>
     <div class="animated-bg"></div>
+
+    <!-- Session Restore Banner -->
+    <div id="restoreBanner" class="restore-banner" style="display: none;">
+        <div class="restore-banner-text">
+            <span>Previous session found.</span> Restore inputs from your last session?
+        </div>
+        <div class="restore-banner-actions">
+            <button class="btn-restore" onclick="restoreSession()">Restore</button>
+            <button class="btn-dismiss" onclick="dismissRestore()">Dismiss</button>
+        </div>
+    </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
@@ -814,6 +889,94 @@
             'NBA': { lineup: 'Los Angeles Lakers', design: 'Vertical Banner' },
             'NFL': { lineup: '2026 Super Bowl LX', design: 'Patriots Go Pats' }
         };
+
+        // Session save/restore
+        const SESSION_KEY = 'hcd-listing-inputs';
+
+        function saveSession() {
+            const inputIds = [
+                'keywords', 'category', 'brandSelect', 'brandName', 'designName',
+                'lineupName', 'productName', 'deviceName', 'mainMaterial',
+                'countryOfManufacture', 'keyFeatures',
+                'competitor1-title', 'competitor1-bullets',
+                'competitor2-title', 'competitor2-bullets',
+                'competitor3-title', 'competitor3-bullets'
+            ];
+
+            const saved = {};
+            inputIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) saved[id] = el.value;
+            });
+            saved._timestamp = Date.now();
+
+            localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
+        }
+
+        function restoreSession() {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (!raw) return;
+
+            const saved = JSON.parse(raw);
+
+            // Restore brand select first (it controls other fields)
+            if (saved.brandSelect) {
+                document.getElementById('brandSelect').value = saved.brandSelect;
+                onBrandSelect();
+            }
+
+            // Restore all other fields (override any brand preset values with saved ones)
+            Object.keys(saved).forEach(id => {
+                if (id === '_timestamp' || id === 'brandSelect') return;
+                const el = document.getElementById(id);
+                if (el) el.value = saved[id];
+            });
+
+            // Handle brand name visibility
+            const brandSelect = document.getElementById('brandSelect');
+            const brandNameInput = document.getElementById('brandName');
+            if (brandSelect.value && brandSelect.value !== '' && brandSelect.value !== 'custom') {
+                brandNameInput.disabled = true;
+                brandNameInput.style.display = 'none';
+            } else {
+                brandNameInput.disabled = false;
+                brandNameInput.style.display = 'block';
+            }
+
+            document.getElementById('restoreBanner').style.display = 'none';
+            showStatus('Previous session restored', 'success');
+        }
+
+        function dismissRestore() {
+            document.getElementById('restoreBanner').style.display = 'none';
+        }
+
+        // Check for saved session on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (raw) {
+                const saved = JSON.parse(raw);
+                // Only show if data has actual content
+                const hasContent = Object.keys(saved).some(k =>
+                    k !== '_timestamp' && saved[k] && saved[k].trim && saved[k].trim() !== ''
+                );
+                if (hasContent) {
+                    document.getElementById('restoreBanner').style.display = 'flex';
+                }
+            }
+        });
+
+        // Auto-save inputs on change
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('.left-panel')) {
+                saveSession();
+            }
+        });
+        document.addEventListener('change', (e) => {
+            if (e.target.closest('.left-panel')) {
+                saveSession();
+            }
+        });
 
         function onBrandSelect() {
             const brandSelect = document.getElementById('brandSelect');
