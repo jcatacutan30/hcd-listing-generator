@@ -304,8 +304,17 @@ app.post('/api/generate-images', async (req, res) => {
       }
     ];
 
-    // 3-6. Feature-based images (extract from top 4 bullets)
-    const featureBullets = bullets.slice(0, 4);
+    // 3-6. Feature-based images (extract from bullets, excluding manufacturing and licensing)
+    const filteredBullets = bullets.filter(bullet => {
+      const upperBullet = bullet.toUpperCase();
+      // Exclude manufacturing and licensing bullets
+      return !upperBullet.includes('MADE IN') &&
+             !upperBullet.includes('ASSEMBLED IN') &&
+             !upperBullet.includes('OFFICIALLY LICENSED');
+    });
+
+    // Take top 4 physical/protective feature bullets
+    const featureBullets = filteredBullets.slice(0, 4);
     featureBullets.forEach((bullet, index) => {
       // Extract feature name from bullet (text before the dash)
       const featureMatch = bullet.match(/\*\*(.*?)\*\*/);
