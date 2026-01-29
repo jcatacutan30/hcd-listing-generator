@@ -175,12 +175,25 @@ ${bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')}
 DESCRIPTION:
 ${description}
 
-Please help me revise or improve this listing based on my requests.`
+BACKEND KEYWORDS: ${currentListing.backendKeywords || ''}
+
+Please help me revise or improve this listing based on my requests.
+
+IMPORTANT: When you make changes, you MUST include a JSON block at the END of your response in this exact format:
+\`\`\`json
+{
+  "title": "the full updated title if changed, or null if unchanged",
+  "bullets": ["bullet 1 with **Bold** – description", "bullet 2..."] or null if unchanged,
+  "hcdFormat": "the full updated description if changed, or null if unchanged",
+  "backendKeywords": "updated keywords if changed, or null if unchanged"
+}
+\`\`\`
+Always include this JSON block when making ANY changes. Keep the **Bold Title** – description format for bullets.`
     });
 
     messages.push({
       role: 'assistant',
-      content: 'I understand. I have your current Amazon listing. How would you like me to help you improve it?'
+      content: 'I understand. I have your current Amazon listing and will include a JSON block with any changes I make. How would you like me to help you improve it?'
     });
 
     // Add chat history
@@ -210,35 +223,33 @@ Please help me revise or improve this listing based on my requests.`
 
     const assistantMessage = response.content[0].text;
 
-    // Check if the response contains updated listing elements
+    // Extract JSON block from response
     let updatedListing = null;
-
-    // Try to extract updated bullets - more flexible pattern
-    const bulletMatches = [...assistantMessage.matchAll(/[•\-]\s*\*\*(.*?)\*\*\s*[–\-—]\s*(.*?)(?=\n[•\-]|\n\n|$)/gs)];
-    if (bulletMatches.length >= 3) {
-      updatedListing = updatedListing || {};
-      updatedListing.bullets = bulletMatches.map(match => `**${match[1].trim()}** – ${match[2].trim()}`);
+    const jsonMatch = assistantMessage.match(/```json\s*([\s\S]*?)```/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1].trim());
+        updatedListing = {};
+        if (parsed.title) updatedListing.title = parsed.title;
+        if (parsed.bullets && Array.isArray(parsed.bullets)) updatedListing.bullets = parsed.bullets;
+        if (parsed.hcdFormat) updatedListing.hcdFormat = parsed.hcdFormat;
+        if (parsed.backendKeywords) updatedListing.backendKeywords = parsed.backendKeywords;
+        // If all values are null, set updatedListing to null
+        if (!parsed.title && !parsed.bullets && !parsed.hcdFormat && !parsed.backendKeywords) {
+          updatedListing = null;
+        }
+      } catch (e) {
+        console.error('Failed to parse JSON from chat response:', e.message);
+        updatedListing = null;
+      }
     }
 
-    // Try to extract updated title
-    const titleMatch = assistantMessage.match(/(?:TITLE|Title):\s*(.+?)(?=\n|$)/i);
-    if (titleMatch) {
-      updatedListing = updatedListing || {};
-      updatedListing.title = titleMatch[1].trim();
-    }
-
-    // Try to extract updated description/HCD format - more flexible
-    const descMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*?)(?=\n\n\*\*|$)/i);
-    if (descMatch) {
-      updatedListing = updatedListing || {};
-      // Get the full HCD format including Features and Supplied
-      const fullDescMatch = assistantMessage.match(/\*\*Product Description:\*\*([\s\S]*)/i);
-      updatedListing.hcdFormat = fullDescMatch ? fullDescMatch[0].trim() : descMatch[0].trim();
-    }
+    // Strip the JSON block from the displayed message
+    const displayMessage = assistantMessage.replace(/```json\s*[\s\S]*?```/, '').trim();
 
     res.json({
       success: true,
-      message: assistantMessage,
+      message: displayMessage,
       updatedListing
     });
 
