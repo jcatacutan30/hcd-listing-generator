@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
-const { GoogleGenAI } = require('@google/genai');
 const path = require('path');
 
 const app = express();
@@ -11,9 +10,6 @@ const PORT = process.env.PORT || 3000;
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY
 });
-
-// Initialize Google Gemini client
-const genai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // Middleware
 app.use(express.json({ limit: '50mb' }));
