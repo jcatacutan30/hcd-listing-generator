@@ -1391,7 +1391,7 @@
             });
         }
 
-        // ═══════ Hatching Doodle Animation ═══════
+        // ═══════ Architectural Product Blueprint Animation ═══════
         (function() {
             const canvas = document.getElementById('doodleCanvas');
             if (!canvas) return;
@@ -1418,128 +1418,426 @@
                     : 'rgba(90, 100, 70,' + alpha.toFixed(3) + ')';
             }
 
-            const patches = [];
-            const MAX_PATCHES = 80;
+            // Product drawing functions - architectural style with line segments
+            const products = {
+                // iPhone 17 case
+                iPhone17Case: {
+                    bounds: { w: 100, h: 160 },
+                    getLines: function() {
+                        const w = 38, h = 78, r = 8;
+                        return [
+                            // Main body outline
+                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: r },
+                            // Dynamic Island
+                            { type: 'rect', x: -12, y: -h/2 + 8, w: 24, h: 8, r: 4 },
+                            // Camera module
+                            { type: 'rect', x: -w/2 + 1, y: -h/2 + 7, w: 22, h: 22, r: 5 },
+                            // Camera lenses
+                            { type: 'circle', x: -w/2 + 12, y: -h/2 + 13, r: 4 },
+                            { type: 'circle', x: -w/2 + 7, y: -h/2 + 23, r: 4 },
+                            { type: 'circle', x: -w/2 + 17, y: -h/2 + 23, r: 4 },
+                            // Side buttons
+                            { type: 'line', x1: -w/2 - 2, y1: -15, x2: -w/2 - 2, y2: 5 },
+                            { type: 'line', x1: w/2 + 2, y1: -20, x2: w/2 + 2, y2: -8 },
+                        ];
+                    },
+                    dimensions: [
+                        { x1: -32, y1: -45, x2: -32, y2: 45, label: '160.9mm', side: 'left' },
+                        { x1: -19, y1: 52, x2: 19, y2: 52, label: '77.8mm', side: 'bottom' }
+                    ]
+                },
 
-            // Grid-based spawning for even coverage
-            function getSpawnPos() {
-                // Divide canvas into a grid, pick a cell with some jitter
-                const cols = 5, rows = 6;
-                const cellW = rw / cols, cellH = rh / rows;
-                const col = Math.floor(Math.random() * cols);
-                const row = Math.floor(Math.random() * rows);
-                return {
-                    x: col * cellW + Math.random() * cellW,
-                    y: row * cellH + Math.random() * cellH
-                };
-            }
+                // PS5 Console + Controller together
+                ps5Setup: {
+                    bounds: { w: 220, h: 180 },
+                    getLines: function() {
+                        return [
+                            // === CONSOLE (left side) ===
+                            // Outer shell left
+                            { type: 'bezier', x1: -85, y1: -70, cx1: -92, cy1: -60, cx2: -94, cy2: -20, x2: -92, y2: 30 },
+                            { type: 'bezier', x1: -92, y1: 30, cx1: -90, cy1: 60, cx2: -82, cy2: 72, x2: -68, y2: 75 },
+                            // Outer shell right
+                            { type: 'bezier', x1: -35, y1: -70, cx1: -28, cy1: -60, cx2: -26, cy2: -20, x2: -28, y2: 30 },
+                            { type: 'bezier', x1: -28, y1: 30, cx1: -30, cy1: 60, cx2: -38, cy2: 72, x2: -52, y2: 75 },
+                            // Top curve
+                            { type: 'bezier', x1: -85, y1: -70, cx1: -70, cy1: -78, cx2: -50, cy2: -78, x2: -35, y2: -70 },
+                            // Bottom
+                            { type: 'line', x1: -68, y1: 75, x2: -52, y2: 75 },
+                            // Center section
+                            { type: 'bezier', x1: -68, y1: -66, cx1: -72, cy1: -55, cx2: -72, cy2: 50, x2: -68, y2: 70 },
+                            { type: 'bezier', x1: -52, y1: -66, cx1: -48, cy1: -55, cx2: -48, cy2: 50, x2: -52, y2: 70 },
+                            // Disc slot
+                            { type: 'line', x1: -66, y1: 20, x2: -54, y2: 20 },
+                            // Buttons
+                            { type: 'circle', x: -60, y: 32, r: 2 },
+                            { type: 'circle', x: -60, y: 40, r: 2 },
+                            // USB ports
+                            { type: 'rect', x: -65, y: 52, w: 4, h: 2, r: 0.5 },
+                            { type: 'rect', x: -57, y: 52, w: 4, h: 2, r: 0.5 },
 
-            class HatchPatch {
-                constructor(preSeeded) {
-                    const pos = getSpawnPos();
-                    this.cx = pos.x;
-                    this.cy = pos.y;
-                    // Architectural angles
-                    const angles = [0, Math.PI/6, Math.PI/4, Math.PI/3, Math.PI/2,
-                                    -Math.PI/6, -Math.PI/4, -Math.PI/3, Math.PI * 2/3];
-                    this.angle = angles[Math.floor(Math.random() * angles.length)] + (Math.random() - 0.5) * 0.12;
-                    this.lineCount = 8 + Math.floor(Math.random() * 16);
-                    this.lineLength = 80 + Math.random() * 200;
-                    this.spacing = 3 + Math.random() * 4;
-                    this.lineWidth = 0.5 + Math.random() * 0.8;
-                    this.drawnLines = preSeeded ? this.lineCount : 0;
-                    this.drawProgress = 0;
-                    this.drawSpeed = 0.03 + Math.random() * 0.04;
-                    this.life = preSeeded ? Math.floor(Math.random() * 300) : 0;
-                    this.fadeStart = 500 + Math.random() * 600;
-                    this.fadeDuration = 200;
-                    this.dead = false;
-                    this.wobble = (Math.random() - 0.5) * 0.4;
-                    // Some patches are extra long (connector feel)
-                    if (Math.random() < 0.25) {
-                        this.lineLength = 180 + Math.random() * 250;
-                        this.lineCount = 4 + Math.floor(Math.random() * 6);
-                        this.spacing = 5 + Math.random() * 4;
+                            // === CONTROLLER (right side) ===
+                            // Left grip
+                            { type: 'bezier', x1: 25, y1: -10, cx1: 18, cy1: 0, cx2: 16, cy2: 25, x2: 20, y2: 45 },
+                            { type: 'bezier', x1: 20, y1: 45, cx1: 24, cy1: 58, cx2: 35, cy2: 62, x2: 42, y2: 56 },
+                            { type: 'bezier', x1: 42, y1: 56, cx1: 48, cy1: 50, cx2: 50, cy2: 35, x2: 48, y2: 20 },
+                            // Right grip
+                            { type: 'bezier', x1: 95, y1: -10, cx1: 102, cy1: 0, cx2: 104, cy2: 25, x2: 100, y2: 45 },
+                            { type: 'bezier', x1: 100, y1: 45, cx1: 96, cy1: 58, cx2: 85, cy2: 62, x2: 78, y2: 56 },
+                            { type: 'bezier', x1: 78, y1: 56, cx1: 72, cy1: 50, cx2: 70, cy2: 35, x2: 72, y2: 20 },
+                            // Top body
+                            { type: 'bezier', x1: 25, y1: -10, cx1: 32, cy1: -22, cx2: 50, cy2: -28, x2: 60, y2: -25 },
+                            { type: 'bezier', x1: 95, y1: -10, cx1: 88, cy1: -22, cx2: 70, cy2: -28, x2: 60, y2: -25 },
+                            // Body center
+                            { type: 'bezier', x1: 48, y1: 20, cx1: 55, cy1: 25, cx2: 65, cy2: 25, x2: 72, y2: 20 },
+                            // Touchpad
+                            { type: 'rect', x: 45, y: -12, w: 30, h: 18, r: 3 },
+                            // D-pad
+                            { type: 'line', x1: 30, y1: -8, x2: 30, y2: 2 },
+                            { type: 'line', x1: 25, y1: -3, x2: 35, y2: -3 },
+                            // Face buttons
+                            { type: 'circle', x: 88, y: -12, r: 3 },
+                            { type: 'circle', x: 94, y: -6, r: 3 },
+                            { type: 'circle', x: 88, y: 0, r: 3 },
+                            { type: 'circle', x: 82, y: -6, r: 3 },
+                            // Analog sticks
+                            { type: 'circle', x: 38, y: 15, r: 7 },
+                            { type: 'circle', x: 38, y: 15, r: 3 },
+                            { type: 'circle', x: 82, y: 15, r: 7 },
+                            { type: 'circle', x: 82, y: 15, r: 3 },
+                            // PS button
+                            { type: 'circle', x: 60, y: 12, r: 4 },
+                        ];
+                    },
+                    dimensions: [
+                        { x1: -100, y1: -78, x2: -100, y2: 75, label: '390mm', side: 'left' },
+                        { x1: 15, y1: 72, x2: 105, y2: 72, label: '160mm', side: 'bottom' }
+                    ]
+                },
+
+                // MagSafe Charging Pad - rectangular with round MagSafe center
+                magsafeCharger: {
+                    bounds: { w: 140, h: 100 },
+                    getLines: function() {
+                        const w = 80, h = 50;
+                        return [
+                            // Outer rectangular body
+                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: 8 },
+                            // Inner border detail
+                            { type: 'rect', x: -w/2 + 4, y: -h/2 + 4, w: w - 8, h: h - 8, r: 5 },
+                            // MagSafe circle (center)
+                            { type: 'circle', x: 0, y: 0, r: 18 },
+                            { type: 'circle', x: 0, y: 0, r: 14 },
+                            { type: 'circle', x: 0, y: 0, r: 6 },
+                            // Alignment magnets (small circles around center)
+                            { type: 'circle', x: 0, y: -11, r: 2 },
+                            { type: 'circle', x: 10, y: -5, r: 2 },
+                            { type: 'circle', x: 10, y: 5, r: 2 },
+                            { type: 'circle', x: 0, y: 11, r: 2 },
+                            { type: 'circle', x: -10, y: 5, r: 2 },
+                            { type: 'circle', x: -10, y: -5, r: 2 },
+                            // USB-C port indicator
+                            { type: 'rect', x: w/2 - 8, y: -3, w: 6, h: 6, r: 1 },
+                            // LED indicator
+                            { type: 'circle', x: -w/2 + 12, y: 0, r: 3 },
+                        ];
+                    },
+                    dimensions: [
+                        { x1: -50, y1: -35, x2: -50, y2: 35, label: '70mm', side: 'left' },
+                        { x1: -40, y1: 38, x2: 40, y2: 38, label: '110mm', side: 'bottom' }
+                    ]
+                },
+
+                // Desk Mat
+                deskMat: {
+                    bounds: { w: 260, h: 120 },
+                    getLines: function() {
+                        const w = 130, h = 55;
+                        return [
+                            // Main mat outline
+                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: 4 },
+                            // Stitching
+                            { type: 'rect', x: -w/2 + 5, y: -h/2 + 5, w: w - 10, h: h - 10, r: 2, dashed: true },
+                            // Texture lines
+                            { type: 'line', x1: -50, y1: -h/2 + 10, x2: -50, y2: h/2 - 10, faint: true },
+                            { type: 'line', x1: -25, y1: -h/2 + 10, x2: -25, y2: h/2 - 10, faint: true },
+                            { type: 'line', x1: 0, y1: -h/2 + 10, x2: 0, y2: h/2 - 10, faint: true },
+                            { type: 'line', x1: 25, y1: -h/2 + 10, x2: 25, y2: h/2 - 10, faint: true },
+                            { type: 'line', x1: 50, y1: -h/2 + 10, x2: 50, y2: h/2 - 10, faint: true },
+                        ];
+                    },
+                    dimensions: [
+                        { x1: -65, y1: 38, x2: 65, y2: 38, label: '900mm', side: 'bottom' },
+                        { x1: 75, y1: -27, x2: 75, y2: 27, label: '400mm', side: 'right' }
+                    ]
+                }
+            };
+
+            // Ordered sequence: phone case → PS5 setup → desk mat → MagSafe charger
+            const productSequence = ['iPhone17Case', 'ps5Setup', 'deskMat', 'magsafeCharger'];
+            let currentProductIndex = 0;
+
+            const blueprints = [];
+            const MAX_BLUEPRINTS = 4;
+
+            // Grid-based placement to avoid overlaps
+            const gridCols = 2, gridRows = 2;
+            let usedCells = [];
+
+            function getSpawnPos(bounds) {
+                const cellW = rw / gridCols;
+                const cellH = rh / gridRows;
+
+                // Find available cells
+                const available = [];
+                for (let r = 0; r < gridRows; r++) {
+                    for (let c = 0; c < gridCols; c++) {
+                        const cellId = r * gridCols + c;
+                        if (!usedCells.includes(cellId)) {
+                            available.push({ r, c, id: cellId });
+                        }
                     }
                 }
+
+                if (available.length === 0) {
+                    usedCells = []; // Reset if all full
+                    return { x: rw / 2, y: rh / 2, cellId: -1 };
+                }
+
+                const cell = available[Math.floor(Math.random() * available.length)];
+                const margin = 60;
+                const x = cell.c * cellW + margin + Math.random() * (cellW - margin * 2);
+                const y = cell.r * cellH + margin + Math.random() * (cellH - margin * 2);
+
+                return { x, y, cellId: cell.id };
+            }
+
+            // Draw a single line segment with progress
+            function drawLineSegment(ctx, line, progress) {
+                if (progress <= 0) return;
+                const p = Math.min(1, progress);
+
+                if (line.faint) ctx.globalAlpha *= 0.3;
+                if (line.dashed) ctx.setLineDash([4, 4]);
+
+                ctx.beginPath();
+
+                if (line.type === 'line') {
+                    const x = line.x1 + (line.x2 - line.x1) * p;
+                    const y = line.y1 + (line.y2 - line.y1) * p;
+                    ctx.moveTo(line.x1, line.y1);
+                    ctx.lineTo(x, y);
+                } else if (line.type === 'circle') {
+                    ctx.arc(line.x, line.y, line.r, 0, Math.PI * 2 * p);
+                } else if (line.type === 'rect') {
+                    if (p >= 1) {
+                        ctx.roundRect(line.x, line.y, line.w, line.h, line.r || 0);
+                    } else {
+                        // Draw rect progressively
+                        const perim = 2 * (line.w + line.h);
+                        const dist = perim * p;
+                        ctx.moveTo(line.x + (line.r || 0), line.y);
+                        if (dist <= line.w) {
+                            ctx.lineTo(line.x + dist, line.y);
+                        } else if (dist <= line.w + line.h) {
+                            ctx.lineTo(line.x + line.w, line.y);
+                            ctx.lineTo(line.x + line.w, line.y + (dist - line.w));
+                        } else if (dist <= 2 * line.w + line.h) {
+                            ctx.lineTo(line.x + line.w, line.y);
+                            ctx.lineTo(line.x + line.w, line.y + line.h);
+                            ctx.lineTo(line.x + line.w - (dist - line.w - line.h), line.y + line.h);
+                        } else {
+                            ctx.lineTo(line.x + line.w, line.y);
+                            ctx.lineTo(line.x + line.w, line.y + line.h);
+                            ctx.lineTo(line.x, line.y + line.h);
+                            ctx.lineTo(line.x, line.y + line.h - (dist - 2 * line.w - line.h));
+                        }
+                    }
+                } else if (line.type === 'bezier') {
+                    // Approximate bezier with progress
+                    const steps = 20;
+                    const maxStep = Math.floor(steps * p);
+                    for (let i = 0; i <= maxStep; i++) {
+                        const t = i / steps;
+                        const mt = 1 - t;
+                        const x = mt*mt*mt*line.x1 + 3*mt*mt*t*line.cx1 + 3*mt*t*t*line.cx2 + t*t*t*line.x2;
+                        const y = mt*mt*mt*line.y1 + 3*mt*mt*t*line.cy1 + 3*mt*t*t*line.cy2 + t*t*t*line.y2;
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                }
+
+                ctx.stroke();
+                if (line.dashed) ctx.setLineDash([]);
+                if (line.faint) ctx.globalAlpha /= 0.3;
+            }
+
+            // Draw dimension with progress
+            function drawDimension(ctx, dim, progress, alpha) {
+                if (progress <= 0) return;
+                const arrowSize = 5;
+                ctx.globalAlpha = alpha * 0.7;
+
+                if (dim.side === 'left' || dim.side === 'right') {
+                    const x = dim.x1;
+                    const len = (dim.y2 - dim.y1) * progress;
+                    // Line
+                    ctx.beginPath();
+                    ctx.moveTo(x, dim.y1);
+                    ctx.lineTo(x, dim.y1 + len);
+                    ctx.stroke();
+                    // Arrows when complete
+                    if (progress > 0.9) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, dim.y1); ctx.lineTo(x - 2, dim.y1 + arrowSize); ctx.moveTo(x, dim.y1); ctx.lineTo(x + 2, dim.y1 + arrowSize);
+                        ctx.moveTo(x, dim.y2); ctx.lineTo(x - 2, dim.y2 - arrowSize); ctx.moveTo(x, dim.y2); ctx.lineTo(x + 2, dim.y2 - arrowSize);
+                        ctx.stroke();
+                        // Extension lines
+                        ctx.beginPath();
+                        ctx.moveTo(x + (dim.side === 'left' ? 8 : -8), dim.y1); ctx.lineTo(x - (dim.side === 'left' ? 3 : -3), dim.y1);
+                        ctx.moveTo(x + (dim.side === 'left' ? 8 : -8), dim.y2); ctx.lineTo(x - (dim.side === 'left' ? 3 : -3), dim.y2);
+                        ctx.stroke();
+                        // Label
+                        ctx.save();
+                        ctx.translate(x + (dim.side === 'left' ? -12 : 12), (dim.y1 + dim.y2) / 2);
+                        ctx.rotate(-Math.PI / 2);
+                        ctx.font = '9px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(dim.label, 0, 0);
+                        ctx.restore();
+                    }
+                } else {
+                    const y = dim.y1;
+                    const len = (dim.x2 - dim.x1) * progress;
+                    ctx.beginPath();
+                    ctx.moveTo(dim.x1, y);
+                    ctx.lineTo(dim.x1 + len, y);
+                    ctx.stroke();
+                    if (progress > 0.9) {
+                        ctx.beginPath();
+                        ctx.moveTo(dim.x1, y); ctx.lineTo(dim.x1 + arrowSize, y - 2); ctx.moveTo(dim.x1, y); ctx.lineTo(dim.x1 + arrowSize, y + 2);
+                        ctx.moveTo(dim.x2, y); ctx.lineTo(dim.x2 - arrowSize, y - 2); ctx.moveTo(dim.x2, y); ctx.lineTo(dim.x2 - arrowSize, y + 2);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(dim.x1, y + (dim.side === 'bottom' ? -8 : 8)); ctx.lineTo(dim.x1, y + (dim.side === 'bottom' ? 3 : -3));
+                        ctx.moveTo(dim.x2, y + (dim.side === 'bottom' ? -8 : 8)); ctx.lineTo(dim.x2, y + (dim.side === 'bottom' ? 3 : -3));
+                        ctx.stroke();
+                        ctx.font = '9px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(dim.label, (dim.x1 + dim.x2) / 2, y + (dim.side === 'bottom' ? 16 : -10));
+                    }
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            class Blueprint {
+                constructor(preSeeded = false) {
+                    this.type = productSequence[currentProductIndex];
+                    currentProductIndex = (currentProductIndex + 1) % productSequence.length;
+                    this.product = products[this.type];
+
+                    const pos = getSpawnPos(this.product.bounds);
+                    this.x = pos.x;
+                    this.y = pos.y;
+                    this.cellId = pos.cellId;
+                    if (this.cellId >= 0) usedCells.push(this.cellId);
+
+                    this.scale = 1.3 + Math.random() * 0.3;
+                    this.rotation = (Math.random() - 0.5) * 0.1;
+
+                    this.lines = this.product.getLines();
+                    this.totalElements = this.lines.length + this.product.dimensions.length;
+
+                    this.drawProgress = preSeeded ? 1 : 0;
+                    this.drawSpeed = 0.006 + Math.random() * 0.004;
+                    this.life = preSeeded ? 200 + Math.floor(Math.random() * 300) : 0;
+                    this.holdDuration = 600 + Math.random() * 400;
+                    this.fadeDuration = 250 + Math.random() * 150;
+                    this.dead = false;
+                }
+
                 update() {
                     this.life++;
-                    if (this.drawnLines < this.lineCount) {
-                        this.drawProgress += this.drawSpeed;
-                        if (this.drawProgress >= 1) {
-                            this.drawProgress = 0;
-                            this.drawnLines++;
-                        }
+                    if (this.drawProgress < 1) {
+                        this.drawProgress = Math.min(1, this.drawProgress + this.drawSpeed);
                     }
-                    if (this.life > this.fadeStart + this.fadeDuration) this.dead = true;
+                    if (this.life > this.holdDuration + this.fadeDuration) {
+                        this.dead = true;
+                        // Free up the cell
+                        const idx = usedCells.indexOf(this.cellId);
+                        if (idx >= 0) usedCells.splice(idx, 1);
+                    }
                 }
+
                 draw(ctx) {
-                    const cos = Math.cos(this.angle);
-                    const sin = Math.sin(this.angle);
-                    const perpX = -sin * this.spacing;
-                    const perpY = cos * this.spacing;
-                    const startOffX = -perpX * this.lineCount / 2;
-                    const startOffY = -perpY * this.lineCount / 2;
-
                     let alpha = 1;
-                    if (this.life < 40) alpha = this.life / 40;
-                    if (this.life > this.fadeStart) {
-                        alpha = Math.max(0, 1 - (this.life - this.fadeStart) / this.fadeDuration);
+                    if (this.drawProgress < 0.15) {
+                        alpha = this.drawProgress / 0.15;
                     }
+                    if (this.life > this.holdDuration) {
+                        alpha = Math.max(0, 1 - (this.life - this.holdDuration) / this.fadeDuration);
+                    }
+                    if (alpha <= 0) return;
 
-                    ctx.lineWidth = this.lineWidth;
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.scale(this.scale, this.scale);
+
+                    ctx.strokeStyle = getColor(alpha * 0.4);
+                    ctx.fillStyle = getColor(alpha * 0.4);
+                    ctx.lineWidth = 1.0;
                     ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
 
-                    const linesToDraw = Math.min(this.drawnLines + 1, this.lineCount);
-                    for (let i = 0; i < linesToDraw; i++) {
-                        const ox = startOffX + perpX * i;
-                        const oy = startOffY + perpY * i;
-                        const halfLen = this.lineLength / 2;
-
-                        let progress = 1;
-                        if (i === this.drawnLines && this.drawnLines < this.lineCount) {
-                            progress = this.drawProgress;
-                        }
-
-                        const x1 = this.cx + ox - cos * halfLen;
-                        const y1 = this.cy + oy - sin * halfLen;
-                        const x2 = this.cx + ox - cos * halfLen + cos * this.lineLength * progress;
-                        const y2 = this.cy + oy - sin * halfLen + sin * this.lineLength * progress;
-
-                        const mx = (x1 + x2) / 2 + this.wobble * perpX;
-                        const my = (y1 + y2) / 2 + this.wobble * perpY;
-
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y1);
-                        ctx.quadraticCurveTo(mx, my, x2, y2);
-                        ctx.strokeStyle = getColor(alpha * 0.18);
-                        ctx.stroke();
+                    // Phase 1: Draw dimensions first (0-30% progress)
+                    const dimProgress = Math.min(1, this.drawProgress / 0.3);
+                    const numDims = this.product.dimensions.length;
+                    for (let i = 0; i < numDims; i++) {
+                        const dimStart = i / numDims;
+                        const dimEnd = (i + 1) / numDims;
+                        const thisDimProgress = Math.max(0, Math.min(1, (dimProgress - dimStart) / (dimEnd - dimStart)));
+                        ctx.lineWidth = 0.6;
+                        drawDimension(ctx, this.product.dimensions[i], thisDimProgress, alpha);
                     }
+
+                    // Phase 2: Draw product lines (30-100% progress)
+                    if (this.drawProgress > 0.3) {
+                        const lineProgress = (this.drawProgress - 0.3) / 0.7;
+                        const numLines = this.lines.length;
+                        ctx.lineWidth = 1.0;
+
+                        for (let i = 0; i < numLines; i++) {
+                            const lineStart = i / numLines;
+                            const lineEnd = (i + 1) / numLines;
+                            const thisLineProgress = Math.max(0, Math.min(1, (lineProgress - lineStart) / (lineEnd - lineStart)));
+                            drawLineSegment(ctx, this.lines[i], thisLineProgress);
+                        }
+                    }
+
+                    ctx.restore();
                 }
             }
 
-            // Seed heavily for a full background on load
-            for (let i = 0; i < 30; i++) {
-                patches.push(new HatchPatch(true));
+            // Seed initial blueprints
+            for (let i = 0; i < 3; i++) {
+                blueprints.push(new Blueprint(true));
             }
 
             let spawnCounter = 0;
+            const spawnInterval = 150;
+
             function animate() {
                 ctx.clearRect(0, 0, rw, rh);
 
-                for (let i = patches.length - 1; i >= 0; i--) {
-                    if (patches[i].dead) patches.splice(i, 1);
+                for (let i = blueprints.length - 1; i >= 0; i--) {
+                    if (blueprints[i].dead) blueprints.splice(i, 1);
                 }
 
-                patches.forEach(p => { p.update(); p.draw(ctx); });
+                blueprints.forEach(b => { b.update(); b.draw(ctx); });
 
                 spawnCounter++;
-                if (spawnCounter >= 15 && patches.length < MAX_PATCHES) {
-                    patches.push(new HatchPatch(false));
-                    // Occasionally spawn a second one nearby for cluster feel
-                    if (Math.random() < 0.4 && patches.length < MAX_PATCHES) {
-                        patches.push(new HatchPatch(false));
-                    }
+                if (spawnCounter >= spawnInterval && blueprints.length < MAX_BLUEPRINTS) {
+                    blueprints.push(new Blueprint(false));
                     spawnCounter = 0;
                 }
 
