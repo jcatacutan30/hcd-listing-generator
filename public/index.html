@@ -498,7 +498,7 @@
             animation: doodleReveal 2.5s ease-out 0.3s forwards;
         }
         .empty-state p {
-            font-size: 15px; font-weight: 500; letter-spacing: 0.02em;
+            font-size: 28px; font-weight: 600; letter-spacing: 0.02em;
             opacity: 0;
             animation: doodleTextReveal 1s ease-out 1.8s forwards;
         }
@@ -1391,7 +1391,7 @@
             });
         }
 
-        // ═══════ Architectural Product Blueprint Animation ═══════
+        // ═══════ Product Outline Blueprint Animation ═══════
         (function() {
             const canvas = document.getElementById('doodleCanvas');
             if (!canvas) return;
@@ -1411,358 +1411,235 @@
             resize();
             window.addEventListener('resize', resize);
 
-            function getColor(alpha) {
+            // ── Accent color for tinting ──
+            function getAccentRGB() {
                 const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                return isDark
-                    ? 'rgba(194, 209, 46,' + alpha.toFixed(3) + ')'
-                    : 'rgba(90, 100, 70,' + alpha.toFixed(3) + ')';
+                return isDark ? { r: 194, g: 209, b: 46 } : { r: 90, g: 100, b: 70 };
             }
 
-            // Product drawing functions - architectural style with line segments
-            const products = {
-                // iPhone 17 case
-                iPhone17Case: {
-                    bounds: { w: 100, h: 160 },
-                    getLines: function() {
-                        const w = 38, h = 78, r = 8;
-                        return [
-                            // Main body outline
-                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: r },
-                            // Dynamic Island
-                            { type: 'rect', x: -12, y: -h/2 + 8, w: 24, h: 8, r: 4 },
-                            // Camera module
-                            { type: 'rect', x: -w/2 + 1, y: -h/2 + 7, w: 22, h: 22, r: 5 },
-                            // Camera lenses
-                            { type: 'circle', x: -w/2 + 12, y: -h/2 + 13, r: 4 },
-                            { type: 'circle', x: -w/2 + 7, y: -h/2 + 23, r: 4 },
-                            { type: 'circle', x: -w/2 + 17, y: -h/2 + 23, r: 4 },
-                            // Side buttons
-                            { type: 'line', x1: -w/2 - 2, y1: -15, x2: -w/2 - 2, y2: 5 },
-                            { type: 'line', x1: w/2 + 2, y1: -20, x2: w/2 + 2, y2: -8 },
-                        ];
-                    },
-                    dimensions: [
-                        { x1: -32, y1: -45, x2: -32, y2: 45, label: '160.9mm', side: 'left' },
-                        { x1: -19, y1: 52, x2: 19, y2: 52, label: '77.8mm', side: 'bottom' }
-                    ]
-                },
-
-                // PS5 Console + Controller together
-                ps5Setup: {
-                    bounds: { w: 220, h: 180 },
-                    getLines: function() {
-                        return [
-                            // === CONSOLE (left side) ===
-                            // Outer shell left
-                            { type: 'bezier', x1: -85, y1: -70, cx1: -92, cy1: -60, cx2: -94, cy2: -20, x2: -92, y2: 30 },
-                            { type: 'bezier', x1: -92, y1: 30, cx1: -90, cy1: 60, cx2: -82, cy2: 72, x2: -68, y2: 75 },
-                            // Outer shell right
-                            { type: 'bezier', x1: -35, y1: -70, cx1: -28, cy1: -60, cx2: -26, cy2: -20, x2: -28, y2: 30 },
-                            { type: 'bezier', x1: -28, y1: 30, cx1: -30, cy1: 60, cx2: -38, cy2: 72, x2: -52, y2: 75 },
-                            // Top curve
-                            { type: 'bezier', x1: -85, y1: -70, cx1: -70, cy1: -78, cx2: -50, cy2: -78, x2: -35, y2: -70 },
-                            // Bottom
-                            { type: 'line', x1: -68, y1: 75, x2: -52, y2: 75 },
-                            // Center section
-                            { type: 'bezier', x1: -68, y1: -66, cx1: -72, cy1: -55, cx2: -72, cy2: 50, x2: -68, y2: 70 },
-                            { type: 'bezier', x1: -52, y1: -66, cx1: -48, cy1: -55, cx2: -48, cy2: 50, x2: -52, y2: 70 },
-                            // Disc slot
-                            { type: 'line', x1: -66, y1: 20, x2: -54, y2: 20 },
-                            // Buttons
-                            { type: 'circle', x: -60, y: 32, r: 2 },
-                            { type: 'circle', x: -60, y: 40, r: 2 },
-                            // USB ports
-                            { type: 'rect', x: -65, y: 52, w: 4, h: 2, r: 0.5 },
-                            { type: 'rect', x: -57, y: 52, w: 4, h: 2, r: 0.5 },
-
-                            // === CONTROLLER (right side) ===
-                            // Left grip
-                            { type: 'bezier', x1: 25, y1: -10, cx1: 18, cy1: 0, cx2: 16, cy2: 25, x2: 20, y2: 45 },
-                            { type: 'bezier', x1: 20, y1: 45, cx1: 24, cy1: 58, cx2: 35, cy2: 62, x2: 42, y2: 56 },
-                            { type: 'bezier', x1: 42, y1: 56, cx1: 48, cy1: 50, cx2: 50, cy2: 35, x2: 48, y2: 20 },
-                            // Right grip
-                            { type: 'bezier', x1: 95, y1: -10, cx1: 102, cy1: 0, cx2: 104, cy2: 25, x2: 100, y2: 45 },
-                            { type: 'bezier', x1: 100, y1: 45, cx1: 96, cy1: 58, cx2: 85, cy2: 62, x2: 78, y2: 56 },
-                            { type: 'bezier', x1: 78, y1: 56, cx1: 72, cy1: 50, cx2: 70, cy2: 35, x2: 72, y2: 20 },
-                            // Top body
-                            { type: 'bezier', x1: 25, y1: -10, cx1: 32, cy1: -22, cx2: 50, cy2: -28, x2: 60, y2: -25 },
-                            { type: 'bezier', x1: 95, y1: -10, cx1: 88, cy1: -22, cx2: 70, cy2: -28, x2: 60, y2: -25 },
-                            // Body center
-                            { type: 'bezier', x1: 48, y1: 20, cx1: 55, cy1: 25, cx2: 65, cy2: 25, x2: 72, y2: 20 },
-                            // Touchpad
-                            { type: 'rect', x: 45, y: -12, w: 30, h: 18, r: 3 },
-                            // D-pad
-                            { type: 'line', x1: 30, y1: -8, x2: 30, y2: 2 },
-                            { type: 'line', x1: 25, y1: -3, x2: 35, y2: -3 },
-                            // Face buttons
-                            { type: 'circle', x: 88, y: -12, r: 3 },
-                            { type: 'circle', x: 94, y: -6, r: 3 },
-                            { type: 'circle', x: 88, y: 0, r: 3 },
-                            { type: 'circle', x: 82, y: -6, r: 3 },
-                            // Analog sticks
-                            { type: 'circle', x: 38, y: 15, r: 7 },
-                            { type: 'circle', x: 38, y: 15, r: 3 },
-                            { type: 'circle', x: 82, y: 15, r: 7 },
-                            { type: 'circle', x: 82, y: 15, r: 3 },
-                            // PS button
-                            { type: 'circle', x: 60, y: 12, r: 4 },
-                        ];
-                    },
-                    dimensions: [
-                        { x1: -100, y1: -78, x2: -100, y2: 75, label: '390mm', side: 'left' },
-                        { x1: 15, y1: 72, x2: 105, y2: 72, label: '160mm', side: 'bottom' }
-                    ]
-                },
-
-                // MagSafe Charging Pad - rectangular with round MagSafe center
-                magsafeCharger: {
-                    bounds: { w: 140, h: 100 },
-                    getLines: function() {
-                        const w = 80, h = 50;
-                        return [
-                            // Outer rectangular body
-                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: 8 },
-                            // Inner border detail
-                            { type: 'rect', x: -w/2 + 4, y: -h/2 + 4, w: w - 8, h: h - 8, r: 5 },
-                            // MagSafe circle (center)
-                            { type: 'circle', x: 0, y: 0, r: 18 },
-                            { type: 'circle', x: 0, y: 0, r: 14 },
-                            { type: 'circle', x: 0, y: 0, r: 6 },
-                            // Alignment magnets (small circles around center)
-                            { type: 'circle', x: 0, y: -11, r: 2 },
-                            { type: 'circle', x: 10, y: -5, r: 2 },
-                            { type: 'circle', x: 10, y: 5, r: 2 },
-                            { type: 'circle', x: 0, y: 11, r: 2 },
-                            { type: 'circle', x: -10, y: 5, r: 2 },
-                            { type: 'circle', x: -10, y: -5, r: 2 },
-                            // USB-C port indicator
-                            { type: 'rect', x: w/2 - 8, y: -3, w: 6, h: 6, r: 1 },
-                            // LED indicator
-                            { type: 'circle', x: -w/2 + 12, y: 0, r: 3 },
-                        ];
-                    },
-                    dimensions: [
-                        { x1: -50, y1: -35, x2: -50, y2: 35, label: '70mm', side: 'left' },
-                        { x1: -40, y1: 38, x2: 40, y2: 38, label: '110mm', side: 'bottom' }
-                    ]
-                },
-
-                // Desk Mat
-                deskMat: {
-                    bounds: { w: 260, h: 120 },
-                    getLines: function() {
-                        const w = 130, h = 55;
-                        return [
-                            // Main mat outline
-                            { type: 'rect', x: -w/2, y: -h/2, w: w, h: h, r: 4 },
-                            // Stitching
-                            { type: 'rect', x: -w/2 + 5, y: -h/2 + 5, w: w - 10, h: h - 10, r: 2, dashed: true },
-                            // Texture lines
-                            { type: 'line', x1: -50, y1: -h/2 + 10, x2: -50, y2: h/2 - 10, faint: true },
-                            { type: 'line', x1: -25, y1: -h/2 + 10, x2: -25, y2: h/2 - 10, faint: true },
-                            { type: 'line', x1: 0, y1: -h/2 + 10, x2: 0, y2: h/2 - 10, faint: true },
-                            { type: 'line', x1: 25, y1: -h/2 + 10, x2: 25, y2: h/2 - 10, faint: true },
-                            { type: 'line', x1: 50, y1: -h/2 + 10, x2: 50, y2: h/2 - 10, faint: true },
-                        ];
-                    },
-                    dimensions: [
-                        { x1: -65, y1: 38, x2: 65, y2: 38, label: '900mm', side: 'bottom' },
-                        { x1: 75, y1: -27, x2: 75, y2: 27, label: '400mm', side: 'right' }
-                    ]
+            // Tint an image: dark pixels → accent color, white → transparent
+            function createTintedCanvas(img, color) {
+                const w = img.naturalWidth || img.width;
+                const h = img.naturalHeight || img.height;
+                const c = document.createElement('canvas');
+                c.width = w; c.height = h;
+                const t = c.getContext('2d');
+                t.drawImage(img, 0, 0, w, h);
+                const id = t.getImageData(0, 0, w, h);
+                const px = id.data;
+                for (let i = 0; i < px.length; i += 4) {
+                    const bright = (px[i] + px[i+1] + px[i+2]) / 3;
+                    const a = (255 - bright) / 255;
+                    px[i] = color.r;
+                    px[i+1] = color.g;
+                    px[i+2] = color.b;
+                    px[i+3] = Math.round(a * (px[i+3] / 255) * 255);
                 }
-            };
+                t.putImageData(id, 0, 0);
+                return c;
+            }
 
-            // Ordered sequence: phone case → PS5 setup → desk mat → MagSafe charger
-            const productSequence = ['iPhone17Case', 'ps5Setup', 'deskMat', 'magsafeCharger'];
-            let currentProductIndex = 0;
+            // ── Image loading ──
+            const loadedImages = {};
+            const tintedCache = {};
+            let lastTheme = '';
+            let imagesReady = false;
+            let loadCount = 0;
 
-            const blueprints = [];
-            const MAX_BLUEPRINTS = 4;
+            const imageSources = [
+                'outlines/iph17.jpg',
+                'outlines/ds5ct.JPG',
+                'outlines/large-desk-mat-flat-1.jpg',
+                'outlines/playstation-5.svg'
+            ];
+            const totalImages = imageSources.length;
 
-            // Grid-based placement to avoid overlaps
+            imageSources.forEach(src => {
+                const img = new Image();
+                img.onload = () => {
+                    loadedImages[src] = img;
+                    loadCount++;
+                    if (loadCount >= totalImages) imagesReady = true;
+                };
+                img.onerror = () => { loadCount++; if (loadCount >= totalImages) imagesReady = true; };
+                img.src = src;
+            });
+
+            function getTinted(src) {
+                const theme = document.documentElement.getAttribute('data-theme') || 'dark';
+                if (theme !== lastTheme) { Object.keys(tintedCache).forEach(k => delete tintedCache[k]); lastTheme = theme; }
+                const key = src + '|' + theme;
+                if (!tintedCache[key] && loadedImages[src]) {
+                    tintedCache[key] = createTintedCanvas(loadedImages[src], getAccentRGB());
+                }
+                return tintedCache[key];
+            }
+
+            // ── Product definitions using actual outline images ──
+            // Each product has layers: [{src, ox, oy, dw, dh}]
+            // ox/oy = offset from center, dw/dh = draw size
+
+            const productDefs = [
+                {
+                    name: 'iPhone',
+                    layers: [{ src: 'outlines/iph17.jpg', ox: 0, oy: 0, dw: 320, dh: 300 }]
+                },
+                {
+                    name: 'PS5',
+                    layers: [
+                        { src: 'outlines/playstation-5.svg', ox: -70, oy: -10, dw: 130, dh: 300 },
+                        { src: 'outlines/ds5ct.JPG', ox: 70, oy: 50, dw: 200, dh: 150 }
+                    ]
+                },
+                {
+                    name: 'DeskMat',
+                    layers: [{ src: 'outlines/large-desk-mat-flat-1.jpg', ox: 0, oy: 0, dw: 400, dh: 210 }]
+                }
+            ];
+
+            // ── Grid placement ──
             const gridCols = 2, gridRows = 2;
             let usedCells = [];
+            const MAX_BLUEPRINTS = 3;
+            const blueprints = [];
+            let currentIndex = 0;
 
-            function getSpawnPos(bounds) {
+            function getSpawnPos() {
                 const cellW = rw / gridCols;
                 const cellH = rh / gridRows;
-
-                // Find available cells
                 const available = [];
                 for (let r = 0; r < gridRows; r++) {
                     for (let c = 0; c < gridCols; c++) {
-                        const cellId = r * gridCols + c;
-                        if (!usedCells.includes(cellId)) {
-                            available.push({ r, c, id: cellId });
-                        }
+                        const id = r * gridCols + c;
+                        if (!usedCells.includes(id)) available.push({ r, c, id });
                     }
                 }
-
                 if (available.length === 0) {
-                    usedCells = []; // Reset if all full
+                    usedCells = [];
                     return { x: rw / 2, y: rh / 2, cellId: -1 };
                 }
-
                 const cell = available[Math.floor(Math.random() * available.length)];
-                const margin = 60;
-                const x = cell.c * cellW + margin + Math.random() * (cellW - margin * 2);
-                const y = cell.r * cellH + margin + Math.random() * (cellH - margin * 2);
-
+                const margin = 100;
+                const x = cell.c * cellW + margin + Math.random() * Math.max(0, cellW - margin * 2);
+                const y = cell.r * cellH + margin + Math.random() * Math.max(0, cellH - margin * 2);
                 return { x, y, cellId: cell.id };
             }
 
-            // Draw a single line segment with progress
-            function drawLineSegment(ctx, line, progress) {
-                if (progress <= 0) return;
-                const p = Math.min(1, progress);
-
-                if (line.faint) ctx.globalAlpha *= 0.3;
-                if (line.dashed) ctx.setLineDash([4, 4]);
-
-                ctx.beginPath();
-
-                if (line.type === 'line') {
-                    const x = line.x1 + (line.x2 - line.x1) * p;
-                    const y = line.y1 + (line.y2 - line.y1) * p;
-                    ctx.moveTo(line.x1, line.y1);
-                    ctx.lineTo(x, y);
-                } else if (line.type === 'circle') {
-                    ctx.arc(line.x, line.y, line.r, 0, Math.PI * 2 * p);
-                } else if (line.type === 'rect') {
-                    if (p >= 1) {
-                        ctx.roundRect(line.x, line.y, line.w, line.h, line.r || 0);
-                    } else {
-                        // Draw rect progressively
-                        const perim = 2 * (line.w + line.h);
-                        const dist = perim * p;
-                        ctx.moveTo(line.x + (line.r || 0), line.y);
-                        if (dist <= line.w) {
-                            ctx.lineTo(line.x + dist, line.y);
-                        } else if (dist <= line.w + line.h) {
-                            ctx.lineTo(line.x + line.w, line.y);
-                            ctx.lineTo(line.x + line.w, line.y + (dist - line.w));
-                        } else if (dist <= 2 * line.w + line.h) {
-                            ctx.lineTo(line.x + line.w, line.y);
-                            ctx.lineTo(line.x + line.w, line.y + line.h);
-                            ctx.lineTo(line.x + line.w - (dist - line.w - line.h), line.y + line.h);
-                        } else {
-                            ctx.lineTo(line.x + line.w, line.y);
-                            ctx.lineTo(line.x + line.w, line.y + line.h);
-                            ctx.lineTo(line.x, line.y + line.h);
-                            ctx.lineTo(line.x, line.y + line.h - (dist - 2 * line.w - line.h));
-                        }
-                    }
-                } else if (line.type === 'bezier') {
-                    // Approximate bezier with progress
-                    const steps = 20;
-                    const maxStep = Math.floor(steps * p);
-                    for (let i = 0; i <= maxStep; i++) {
-                        const t = i / steps;
-                        const mt = 1 - t;
-                        const x = mt*mt*mt*line.x1 + 3*mt*mt*t*line.cx1 + 3*mt*t*t*line.cx2 + t*t*t*line.x2;
-                        const y = mt*mt*mt*line.y1 + 3*mt*mt*t*line.cy1 + 3*mt*t*t*line.cy2 + t*t*t*line.y2;
-                        if (i === 0) ctx.moveTo(x, y);
-                        else ctx.lineTo(x, y);
-                    }
-                }
-
-                ctx.stroke();
-                if (line.dashed) ctx.setLineDash([]);
-                if (line.faint) ctx.globalAlpha /= 0.3;
-            }
-
-            // Draw dimension with progress
-            function drawDimension(ctx, dim, progress, alpha) {
-                if (progress <= 0) return;
-                const arrowSize = 5;
-                ctx.globalAlpha = alpha * 0.7;
-
-                if (dim.side === 'left' || dim.side === 'right') {
-                    const x = dim.x1;
-                    const len = (dim.y2 - dim.y1) * progress;
-                    // Line
-                    ctx.beginPath();
-                    ctx.moveTo(x, dim.y1);
-                    ctx.lineTo(x, dim.y1 + len);
-                    ctx.stroke();
-                    // Arrows when complete
-                    if (progress > 0.9) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, dim.y1); ctx.lineTo(x - 2, dim.y1 + arrowSize); ctx.moveTo(x, dim.y1); ctx.lineTo(x + 2, dim.y1 + arrowSize);
-                        ctx.moveTo(x, dim.y2); ctx.lineTo(x - 2, dim.y2 - arrowSize); ctx.moveTo(x, dim.y2); ctx.lineTo(x + 2, dim.y2 - arrowSize);
-                        ctx.stroke();
-                        // Extension lines
-                        ctx.beginPath();
-                        ctx.moveTo(x + (dim.side === 'left' ? 8 : -8), dim.y1); ctx.lineTo(x - (dim.side === 'left' ? 3 : -3), dim.y1);
-                        ctx.moveTo(x + (dim.side === 'left' ? 8 : -8), dim.y2); ctx.lineTo(x - (dim.side === 'left' ? 3 : -3), dim.y2);
-                        ctx.stroke();
-                        // Label
-                        ctx.save();
-                        ctx.translate(x + (dim.side === 'left' ? -12 : 12), (dim.y1 + dim.y2) / 2);
-                        ctx.rotate(-Math.PI / 2);
-                        ctx.font = '9px Inter, sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(dim.label, 0, 0);
-                        ctx.restore();
-                    }
-                } else {
-                    const y = dim.y1;
-                    const len = (dim.x2 - dim.x1) * progress;
-                    ctx.beginPath();
-                    ctx.moveTo(dim.x1, y);
-                    ctx.lineTo(dim.x1 + len, y);
-                    ctx.stroke();
-                    if (progress > 0.9) {
-                        ctx.beginPath();
-                        ctx.moveTo(dim.x1, y); ctx.lineTo(dim.x1 + arrowSize, y - 2); ctx.moveTo(dim.x1, y); ctx.lineTo(dim.x1 + arrowSize, y + 2);
-                        ctx.moveTo(dim.x2, y); ctx.lineTo(dim.x2 - arrowSize, y - 2); ctx.moveTo(dim.x2, y); ctx.lineTo(dim.x2 - arrowSize, y + 2);
-                        ctx.stroke();
-                        ctx.beginPath();
-                        ctx.moveTo(dim.x1, y + (dim.side === 'bottom' ? -8 : 8)); ctx.lineTo(dim.x1, y + (dim.side === 'bottom' ? 3 : -3));
-                        ctx.moveTo(dim.x2, y + (dim.side === 'bottom' ? -8 : 8)); ctx.lineTo(dim.x2, y + (dim.side === 'bottom' ? 3 : -3));
-                        ctx.stroke();
-                        ctx.font = '9px Inter, sans-serif';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(dim.label, (dim.x1 + dim.x2) / 2, y + (dim.side === 'bottom' ? 16 : -10));
-                    }
-                }
-                ctx.globalAlpha = 1;
-            }
-
+            // ── Blueprint class — hand-drawn sketch reveal ──
             class Blueprint {
-                constructor(preSeeded = false) {
-                    this.type = productSequence[currentProductIndex];
-                    currentProductIndex = (currentProductIndex + 1) % productSequence.length;
-                    this.product = products[this.type];
+                constructor(preSeeded) {
+                    this.def = productDefs[currentIndex];
+                    currentIndex = (currentIndex + 1) % productDefs.length;
 
-                    const pos = getSpawnPos(this.product.bounds);
+                    const pos = getSpawnPos();
                     this.x = pos.x;
                     this.y = pos.y;
                     this.cellId = pos.cellId;
                     if (this.cellId >= 0) usedCells.push(this.cellId);
 
-                    this.scale = 1.3 + Math.random() * 0.3;
-                    this.rotation = (Math.random() - 0.5) * 0.1;
-
-                    this.lines = this.product.getLines();
-                    this.totalElements = this.lines.length + this.product.dimensions.length;
+                    this.rotation = (Math.random() - 0.5) * 0.06;
+                    this.scale = 1;
 
                     this.drawProgress = preSeeded ? 1 : 0;
-                    this.drawSpeed = 0.006 + Math.random() * 0.004;
-                    this.life = preSeeded ? 200 + Math.floor(Math.random() * 300) : 0;
-                    this.holdDuration = 600 + Math.random() * 400;
-                    this.fadeDuration = 250 + Math.random() * 150;
+                    this.drawSpeed = 0.005 + Math.random() * 0.002;
+
+                    this.life = preSeeded ? 150 + Math.floor(Math.random() * 300) : 0;
+                    this.holdDuration = 700 + Math.random() * 400;
+                    this.fadeDuration = 220;
                     this.dead = false;
+
+                    // Bounding box for all layers
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    this.def.layers.forEach(layer => {
+                        const lx = layer.ox - layer.dw / 2;
+                        const ly = layer.oy - layer.dh / 2;
+                        minX = Math.min(minX, lx);
+                        minY = Math.min(minY, ly);
+                        maxX = Math.max(maxX, lx + layer.dw);
+                        maxY = Math.max(maxY, ly + layer.dh);
+                    });
+                    const pad = 30;
+                    this.maskOx = minX - pad;
+                    this.maskOy = minY - pad;
+                    this.maskW = (maxX - minX) + pad * 2;
+                    this.maskH = (maxY - minY) + pad * 2;
+
+                    // Offscreen mask canvas: white pixels = revealed area
+                    this.maskCanvas = document.createElement('canvas');
+                    this.maskCanvas.width = this.maskW;
+                    this.maskCanvas.height = this.maskH;
+                    this.maskCtx = this.maskCanvas.getContext('2d');
+
+                    // Reusable compositing canvas
+                    this.compCanvas = document.createElement('canvas');
+                    this.compCanvas.width = this.maskW;
+                    this.compCanvas.height = this.maskH;
+                    this.compCtx = this.compCanvas.getContext('2d');
+
+                    // Build serpentine pen-stroke path
+                    this.pathPoints = this.buildDrawPath();
+                    this.drawnIndex = 0;
+
+                    if (preSeeded) {
+                        this.maskCtx.fillStyle = 'white';
+                        this.maskCtx.fillRect(0, 0, this.maskW, this.maskH);
+                        this.drawnIndex = this.pathPoints.length;
+                    }
+                }
+
+                buildDrawPath() {
+                    const pts = [];
+                    this.def.layers.forEach(layer => {
+                        const cx = layer.ox - this.maskOx;
+                        const cy = layer.oy - this.maskOy;
+                        const hw = layer.dw / 2;
+                        const hh = layer.dh / 2;
+                        const left = cx - hw - 5;
+                        const right = cx + hw + 5;
+                        const top = cy - hh - 5;
+                        const bottom = cy + hh + 5;
+
+                        // Serpentine horizontal sweeps — like pen hatching top→bottom
+                        const rows = 18;
+                        const rowH = (bottom - top) / rows;
+                        for (let r = 0; r < rows; r++) {
+                            const y = top + (r + 0.5) * rowH + (Math.random() - 0.5) * 3;
+                            if (r % 2 === 0) {
+                                pts.push({ x: left, y });
+                                pts.push({ x: right, y });
+                            } else {
+                                pts.push({ x: right, y });
+                                pts.push({ x: left, y });
+                            }
+                        }
+                    });
+                    return pts;
                 }
 
                 update() {
                     this.life++;
                     if (this.drawProgress < 1) {
                         this.drawProgress = Math.min(1, this.drawProgress + this.drawSpeed);
+
+                        // Advance the pen along the path, painting the mask
+                        const targetIdx = Math.floor(this.drawProgress * this.pathPoints.length);
+                        if (targetIdx > this.drawnIndex) {
+                            this.maskCtx.strokeStyle = 'white';
+                            this.maskCtx.lineWidth = 28;
+                            this.maskCtx.lineCap = 'round';
+                            this.maskCtx.lineJoin = 'round';
+                            this.maskCtx.beginPath();
+                            const si = Math.max(0, this.drawnIndex - 1);
+                            this.maskCtx.moveTo(this.pathPoints[si].x, this.pathPoints[si].y);
+                            for (let i = this.drawnIndex; i <= Math.min(targetIdx, this.pathPoints.length - 1); i++) {
+                                this.maskCtx.lineTo(this.pathPoints[i].x, this.pathPoints[i].y);
+                            }
+                            this.maskCtx.stroke();
+                            this.drawnIndex = targetIdx;
+                        }
                     }
                     if (this.life > this.holdDuration + this.fadeDuration) {
                         this.dead = true;
-                        // Free up the cell
                         const idx = usedCells.indexOf(this.cellId);
                         if (idx >= 0) usedCells.splice(idx, 1);
                     }
@@ -1770,10 +1647,7 @@
 
                 draw(ctx) {
                     let alpha = 1;
-                    if (this.drawProgress < 0.15) {
-                        alpha = this.drawProgress / 0.15;
-                    }
-                    if (this.life > this.holdDuration) {
+                    if (this.drawProgress >= 1 && this.life > this.holdDuration) {
                         alpha = Math.max(0, 1 - (this.life - this.holdDuration) / this.fadeDuration);
                     }
                     if (alpha <= 0) return;
@@ -1782,63 +1656,65 @@
                     ctx.translate(this.x, this.y);
                     ctx.rotate(this.rotation);
                     ctx.scale(this.scale, this.scale);
+                    ctx.globalAlpha = alpha * 0.5;
 
-                    ctx.strokeStyle = getColor(alpha * 0.4);
-                    ctx.fillStyle = getColor(alpha * 0.4);
-                    ctx.lineWidth = 1.0;
-                    ctx.lineCap = 'round';
-                    ctx.lineJoin = 'round';
+                    // Composite: tinted images masked by the hand-drawn strokes
+                    const cc = this.compCtx;
+                    cc.clearRect(0, 0, this.maskW, this.maskH);
+                    cc.globalCompositeOperation = 'source-over';
+                    this.def.layers.forEach(layer => {
+                        const tinted = getTinted(layer.src);
+                        if (!tinted) return;
+                        const dx = layer.ox - layer.dw / 2 - this.maskOx;
+                        const dy = layer.oy - layer.dh / 2 - this.maskOy;
+                        cc.drawImage(tinted, dx, dy, layer.dw, layer.dh);
+                    });
+                    cc.globalCompositeOperation = 'destination-in';
+                    cc.drawImage(this.maskCanvas, 0, 0);
+                    cc.globalCompositeOperation = 'source-over';
 
-                    // Phase 1: Draw dimensions first (0-30% progress)
-                    const dimProgress = Math.min(1, this.drawProgress / 0.3);
-                    const numDims = this.product.dimensions.length;
-                    for (let i = 0; i < numDims; i++) {
-                        const dimStart = i / numDims;
-                        const dimEnd = (i + 1) / numDims;
-                        const thisDimProgress = Math.max(0, Math.min(1, (dimProgress - dimStart) / (dimEnd - dimStart)));
-                        ctx.lineWidth = 0.6;
-                        drawDimension(ctx, this.product.dimensions[i], thisDimProgress, alpha);
-                    }
+                    ctx.drawImage(this.compCanvas, this.maskOx, this.maskOy);
 
-                    // Phase 2: Draw product lines (30-100% progress)
-                    if (this.drawProgress > 0.3) {
-                        const lineProgress = (this.drawProgress - 0.3) / 0.7;
-                        const numLines = this.lines.length;
-                        ctx.lineWidth = 1.0;
-
-                        for (let i = 0; i < numLines; i++) {
-                            const lineStart = i / numLines;
-                            const lineEnd = (i + 1) / numLines;
-                            const thisLineProgress = Math.max(0, Math.min(1, (lineProgress - lineStart) / (lineEnd - lineStart)));
-                            drawLineSegment(ctx, this.lines[i], thisLineProgress);
-                        }
+                    // Glowing pen cursor at the current draw point
+                    if (this.drawProgress > 0 && this.drawProgress < 1 && this.drawnIndex > 0) {
+                        const pt = this.pathPoints[Math.min(this.drawnIndex, this.pathPoints.length - 1)];
+                        const accent = getAccentRGB();
+                        ctx.globalAlpha = 0.8;
+                        ctx.beginPath();
+                        ctx.arc(pt.x + this.maskOx, pt.y + this.maskOy, 3, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(' + accent.r + ',' + accent.g + ',' + accent.b + ',0.9)';
+                        ctx.fill();
+                        ctx.globalAlpha = 0.25;
+                        ctx.beginPath();
+                        ctx.arc(pt.x + this.maskOx, pt.y + this.maskOy, 9, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(' + accent.r + ',' + accent.g + ',' + accent.b + ',0.4)';
+                        ctx.fill();
                     }
 
                     ctx.restore();
                 }
             }
 
-            // Seed initial blueprints
-            for (let i = 0; i < 3; i++) {
-                blueprints.push(new Blueprint(true));
-            }
+            // Seed initial blueprints (pre-drawn)
+            for (let i = 0; i < 2; i++) blueprints.push(new Blueprint(true));
 
             let spawnCounter = 0;
-            const spawnInterval = 150;
+            const spawnInterval = 200;
 
             function animate() {
                 ctx.clearRect(0, 0, rw, rh);
 
-                for (let i = blueprints.length - 1; i >= 0; i--) {
-                    if (blueprints[i].dead) blueprints.splice(i, 1);
-                }
+                if (imagesReady) {
+                    for (let i = blueprints.length - 1; i >= 0; i--) {
+                        if (blueprints[i].dead) blueprints.splice(i, 1);
+                    }
+                    blueprints.forEach(b => { b.update(); b.draw(ctx); });
 
-                blueprints.forEach(b => { b.update(); b.draw(ctx); });
-
-                spawnCounter++;
-                if (spawnCounter >= spawnInterval && blueprints.length < MAX_BLUEPRINTS) {
-                    blueprints.push(new Blueprint(false));
-                    spawnCounter = 0;
+                    spawnCounter++;
+                    if (spawnCounter >= spawnInterval && blueprints.length < MAX_BLUEPRINTS) {
+                        blueprints.push(new Blueprint(false));
+                        spawnCounter = 0;
+                    }
                 }
 
                 requestAnimationFrame(animate);
