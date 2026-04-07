@@ -129,6 +129,10 @@ app.post('/api/generate', async (req, res) => {
     const bulletMatches = [...generatedText.matchAll(/[•\-]\s*\*\*(.*?)\*\*\s*[–\-]\s*(.*?)(?=\n[•\-]|\n\n|$)/gs)];
     const bullets = bulletMatches.map(match => `**${toTitleCaseHeader(match[1].trim())}** – ${match[2].trim()}`);
 
+    // Extract suggested title
+    const suggestedTitleMatch = generatedText.match(/\*\*Suggested Title:\*\*\s*(.+)/i);
+    const suggestedTitle = suggestedTitleMatch ? suggestedTitleMatch[1].trim() : null;
+
     // Extract HCD format
     const hcdMatch = generatedText.match(/\*\*Product Description:\*\*([\s\S]*?)(?=$|BULLET|---)/i);
     const hcdFormat = hcdMatch ? hcdMatch[0].trim() : generatedText;
@@ -141,6 +145,7 @@ app.post('/api/generate', async (req, res) => {
       success: true,
       data: {
         title,
+        suggestedTitle,
         bullets,
         hcdFormat,
         validation,
@@ -602,7 +607,14 @@ AMAZON COMPLIANCE RULES:
 - One bullet MUST be **OFFICIALLY LICENSED** to establish brand authenticity
 ${productColour ? `- Naturally mention the product colour (${productColour}) in bullets and description where relevant, e.g. "this ${productColour} ${productName}" — do not force it into every sentence, just weave it in organically` : ''}
 
-Generate between 5 and 8 Amazon bullet points in this EXACT format${manufacturingBullet ? `, with the FIRST bullet being the manufacturing bullet shown below` : ''}:
+TITLE SUGGESTION:
+First, generate a keyword-optimised Amazon title suggestion using this fixed prefix:
+"Head Case Designs Officially Licensed ${brandName || ''} ${productInfo.designName || ''} ${productInfo.lineupName || ''}"
+After the prefix, append the most keyword-rich product name possible using Tier 1 keywords (and Tier 2 if space allows). Max 200 characters total. No forbidden characters (! $ ? _ { } ^ ¬ ¦). No promotional language.
+Output it on its own line in this EXACT format:
+**Suggested Title:** [full title here]
+
+Then generate between 5 and 8 Amazon bullet points in this EXACT format${manufacturingBullet ? `, with the FIRST bullet being the manufacturing bullet shown below` : ''}:
 
 ${manufacturingBullet ? manufacturingBullet + '\n' : ''}• **Officially Licensed ${brandName || ''} ${productName || ''}** – Authentic officially licensed designs with high-resolution UV-printed artwork that won't fade or peel
 ${categoryExampleBullets}

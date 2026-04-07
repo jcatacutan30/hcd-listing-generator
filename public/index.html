@@ -910,6 +910,15 @@
                         <div id="title-count" class="char-count"></div>
                     </div>
 
+                    <div class="result-block" id="suggested-title-block" style="display:none">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Suggested Title <span style="font-size:11px;opacity:0.6;font-weight:400">(keyword-optimised)</span></span>
+                            <button class="copy-btn" onclick="copy('suggestedTitle')">Copy</button>
+                        </div>
+                        <div id="suggested-title-output" class="result-text"></div>
+                        <div id="suggested-title-count" class="char-count"></div>
+                    </div>
+
                     <div class="result-block">
                         <div class="result-block-header">
                             <span class="result-block-title">Bullets</span>
@@ -1281,6 +1290,14 @@
         function updateDisplayedListing() {
             document.getElementById('title-output').textContent = data.title || '';
             document.getElementById('title-count').textContent = data.title ? `${data.title.length}/200` : '';
+            const suggestedTitleBlock = document.getElementById('suggested-title-block');
+            if (data.suggestedTitle) {
+                document.getElementById('suggested-title-output').textContent = data.suggestedTitle;
+                document.getElementById('suggested-title-count').textContent = `${data.suggestedTitle.length}/200`;
+                suggestedTitleBlock.style.display = '';
+            } else {
+                suggestedTitleBlock.style.display = 'none';
+            }
             const list = document.getElementById('bullets-output');
             list.innerHTML = '';
             if (data.bullets) {
@@ -1341,6 +1358,7 @@
         function copy(type) {
             let text = '';
             if (type === 'title') text = data.title || '';
+            else if (type === 'suggestedTitle') text = data.suggestedTitle || '';
             else if (type === 'bullets') text = (data.bullets || []).map(b => b.replace(/\*\*/g, '')).join('\n');
             else if (type === 'description') text = data.hcdFormat || '';
             else if (type === 'backend') text = data.backendKeywords || '';
