@@ -736,6 +736,7 @@
         .btn-dismiss { background: var(--bg-card); color: var(--text-secondary); border: 1px solid var(--border) !important; }
         .btn-dismiss:hover { background: var(--bg-hover); color: var(--text-primary); }
     </style>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <!-- Session Restore Banner -->
@@ -793,7 +794,7 @@
 
             <div class="section">
                 <div class="section-title">CSV Upload</div>
-                <input type="file" accept=".csv" onchange="handleCSVUpload(event)">
+                <input type="file" accept=".csv,.xlsx,.xls" onchange="handleCSVUpload(event)">
             </div>
 
             <div class="input-group">
@@ -1190,32 +1191,76 @@
         function handleCSVUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
+            const isExcel = file.name.match(/\.xlsx?$/i);
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const lines = e.target.result.split('\n');
-                // Detect header row to map columns correctly
-                const header = lines[0].toLowerCase();
-                const isHcdFormat = header.includes('rank') && header.includes('keyword') && header.includes('priority');
-                const kw = lines.slice(1, 100).map(l => {
-                    const p = l.split(',');
-                    if (isHcdFormat) {
-                        // HCD format: Rank, Keyword, Est. Monthly Vol, Source, Priority, Where to Use
-                        const keyword = p[1]?.trim();
-                        const volume = p[2]?.trim().replace(/[^0-9]/g, '') || '0';
-                        const tier = p[4]?.trim() || '';
+
+            function parseRows(rows) {
+                if (!rows || rows.length < 2) return '';
+                const header = rows[0].map(c => (c || '').toString().toLowerCase());
+                const isHcdFormat = header.some(h => h.includes('rank')) && header.some(h => h.includes('keyword')) && header.some(h => h.includes('priority'));
+                const keywordIdx  = header.findIndex(h => h.includes('keyword'));
+                const volumeIdx   = header.findIndex(h => h.includes('vol') || h.includes('volume'));
+                const tierIdx     = header.findIndex(h => h.includes('priority') || h.includes('tier'));
+
+                const kw = rows.slice(1).map(row => {
+                    if (isHcdFormat && keywordIdx >= 0) {
+                        const keyword = (row[keywordIdx] || '').toString().trim();
+                        const volume  = (row[volumeIdx]  || '0').toString().replace(/[^0-9]/g, '') || '0';
+                        const tier    = tierIdx >= 0 ? (row[tierIdx] || '').toString().trim() : '';
                         if (!keyword) return null;
                         return `${keyword}, ${volume}${tier ? ', ' + tier : ''}`;
                     } else {
-                        // Legacy format: keyword, volume, tier
-                        if (p.length < 2) return null;
-                        const tier = p[2]?.trim() || '';
-                        return `${p[0].trim()}, ${p[1].trim()}${tier ? ', ' + tier : ''}`;
+                        // Legacy: keyword, volume, tier
+                        const keyword = (row[0] || '').toString().trim();
+                        const volume  = (row[1] || '').toString().trim();
+                        const tier    = (row[2] || '').toString().trim();
+                        if (!keyword) return null;
+                        return `${keyword}, ${volume}${tier ? ', ' + tier : ''}`;
                     }
                 }).filter(Boolean).join('\n');
-                document.getElementById('keywords').value = kw;
-                showStatus(`${lines.length - 1} keywords imported`, 'success');
+                return kw;
+            }
+
+            reader.onload = (e) => {
+                if (isExcel) {
+                    const workbook = XLSX.read(e.target.result, { type: 'array' });
+                    // Find the sheet with keyword data (has "keyword" and "priority" columns)
+                    let targetSheet = null;
+                    let targetRows = [];
+                    for (const sheetName of workbook.SheetNames) {
+                        const sheet = workbook.Sheets[sheetName];
+                        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        if (rows.length > 1) {
+                            const header = rows[0].map(c => (c || '').toString().toLowerCase().trim());
+                            if (header.some(h => h.includes('keyword')) && header.some(h => h.includes('priority') || h.includes('vol'))) {
+                                targetSheet = sheetName;
+                                targetRows = rows;
+                                break;
+                            }
+                        }
+                    }
+                    if (!targetRows.length) {
+                        // Fall back to first sheet
+                        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                        targetRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                        targetSheet = workbook.SheetNames[0];
+                    }
+                    const kw = parseRows(targetRows);
+                    document.getElementById('keywords').value = kw;
+                    const count = kw.split('\n').filter(Boolean).length;
+                    showStatus(`${count} keywords imported from "${targetSheet}"`, 'success');
+                } else {
+                    // CSV
+                    const lines = e.target.result.split('\n');
+                    const rows = lines.map(l => l.split(','));
+                    const kw = parseRows(rows);
+                    document.getElementById('keywords').value = kw;
+                    showStatus(`${kw.split('\n').filter(Boolean).length} keywords imported`, 'success');
+                }
             };
-            reader.readAsText(file);
+
+            if (isExcel) reader.readAsArrayBuffer(file);
+            else reader.readAsText(file);
         }
 
         function showLoading(text = 'Generating listing...') {
