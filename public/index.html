@@ -1193,11 +1193,24 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 const lines = e.target.result.split('\n');
+                // Detect header row to map columns correctly
+                const header = lines[0].toLowerCase();
+                const isHcdFormat = header.includes('rank') && header.includes('keyword') && header.includes('priority');
                 const kw = lines.slice(1, 100).map(l => {
                     const p = l.split(',');
-                    if (p.length < 2) return null;
-                    const tier = p[2]?.trim() || '';
-                    return `${p[0].trim()}, ${p[1].trim()}${tier ? ', ' + tier : ''}`;
+                    if (isHcdFormat) {
+                        // HCD format: Rank, Keyword, Est. Monthly Vol, Source, Priority, Where to Use
+                        const keyword = p[1]?.trim();
+                        const volume = p[2]?.trim().replace(/[^0-9]/g, '') || '0';
+                        const tier = p[4]?.trim() || '';
+                        if (!keyword) return null;
+                        return `${keyword}, ${volume}${tier ? ', ' + tier : ''}`;
+                    } else {
+                        // Legacy format: keyword, volume, tier
+                        if (p.length < 2) return null;
+                        const tier = p[2]?.trim() || '';
+                        return `${p[0].trim()}, ${p[1].trim()}${tier ? ', ' + tier : ''}`;
+                    }
                 }).filter(Boolean).join('\n');
                 document.getElementById('keywords').value = kw;
                 showStatus(`${lines.length - 1} keywords imported`, 'success');
