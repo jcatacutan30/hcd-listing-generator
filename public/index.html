@@ -798,7 +798,7 @@
 
             <div class="input-group">
                 <label class="label">Keywords</label>
-                <textarea id="keywords" rows="4" placeholder="keyword, volume"></textarea>
+                <textarea id="keywords" rows="4" placeholder="keyword, volume, tier&#10;e.g. wall art, 500000, Tier 1&#10;metal wall art, 200000, Tier 1&#10;magnetic wall mount, 15000, Tier 3"></textarea>
             </div>
 
             <div class="input-group">
@@ -812,6 +812,8 @@
                     <option>Holders &amp; Clips</option>
                     <option>Portable Power</option>
                     <option>Gaming/Office Accessory</option>
+                    <option>Wall Art / Metal Prints</option>
+                    <option>MagSafe Accessories</option>
                 </select>
             </div>
 
@@ -828,19 +830,30 @@
                         <option value="NFL">NFL</option>
                         <option value="custom">Other (Custom)</option>
                     </select>
+                    <input id="productCode" placeholder="Product Code (e.g., HWB01)">
                     <input id="brandName" placeholder="Brand Name">
                     <input id="lineupName" placeholder="Lineup Name">
                     <input id="designName" placeholder="Design Name">
                     <input id="productName" placeholder="Product Name">
                     <input id="deviceName" placeholder="Device Name">
                     <input id="mainMaterial" placeholder="Material">
+                    <input id="productColour" placeholder="Colour (e.g., Black, Navy Blue)">
                     <input id="countryOfManufacture" placeholder="Country (e.g., USA, UK, China)">
+                    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;padding:4px 0;">
+                        <input type="checkbox" id="milStdCertified" style="width:auto;accent-color:var(--accent);">
+                        MIL-STD-810H Certified
+                    </label>
                 </div>
             </div>
 
             <div class="input-group">
                 <label class="label">Key Features</label>
                 <textarea id="keyFeatures" rows="2" placeholder="MagSafe, Protection, etc."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label class="label">Unique Selling Points</label>
+                <textarea id="uniqueSellingPoints" rows="2" placeholder="UV printed, slim profile, designed in the UK, etc."></textarea>
             </div>
 
             <div class="section">
@@ -921,6 +934,18 @@
                         <div id="backend-output" class="result-text"></div>
                     </div>
 
+                    <div class="result-block" id="keyword-coverage-block" style="display:none">
+                        <div class="result-block-header">
+                            <span class="result-block-title">Keyword Coverage</span>
+                            <span id="keyword-coverage-score" style="font-size:12px;color:var(--text-secondary)"></span>
+                        </div>
+                        <div id="keyword-coverage-output" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 0;"></div>
+                    </div>
+
+                    <div style="margin: 16px 0;">
+                        <button class="copy-btn" onclick="downloadDocx()" id="downloadDocxBtn" style="padding: 10px 20px; font-size: 14px;">Download DOCX</button>
+                    </div>
+
                     <div class="image-gen-section">
                         <button class="btn-generate-images" onclick="generateImageConcepts()" id="generateImagesBtn">
                             Generate Image Concepts
@@ -952,6 +977,8 @@
 
     <script>
         let data = {};
+        let currentProductInfo = {};
+        let currentKeywords = [];
         let chatHistory = [];
         let productImageBase64 = null;
 
@@ -1025,7 +1052,7 @@
             const inputIds = [
                 'keywords', 'category', 'brandSelect', 'brandName', 'designName',
                 'lineupName', 'productName', 'deviceName', 'mainMaterial',
-                'countryOfManufacture', 'keyFeatures',
+                'countryOfManufacture', 'keyFeatures', 'uniqueSellingPoints',
                 'competitor1-title', 'competitor1-bullets',
                 'competitor2-title', 'competitor2-bullets',
                 'competitor3-title', 'competitor3-bullets'
@@ -1035,6 +1062,7 @@
                 const el = document.getElementById(id);
                 if (el) saved[id] = el.value;
             });
+            saved.milStdCertified = document.getElementById('milStdCertified').checked;
             saved._timestamp = Date.now();
             localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
         }
@@ -1048,10 +1076,13 @@
                 onBrandSelect();
             }
             Object.keys(saved).forEach(id => {
-                if (id === '_timestamp' || id === 'brandSelect') return;
+                if (id === '_timestamp' || id === 'brandSelect' || id === 'milStdCertified') return;
                 const el = document.getElementById(id);
                 if (el) el.value = saved[id];
             });
+            if (saved.milStdCertified !== undefined) {
+                document.getElementById('milStdCertified').checked = saved.milStdCertified;
+            }
             const brandSelect = document.getElementById('brandSelect');
             const brandNameInput = document.getElementById('brandName');
             if (brandSelect.value && brandSelect.value !== '' && brandSelect.value !== 'custom') {
@@ -1120,15 +1151,21 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 productImageBase64 = e.target.result;
-                document.getElementById('imagePreview').innerHTML = `<img src="${e.target.result}" alt="Product preview">`;
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Product preview';
+                preview.appendChild(img);
                 showStatus('Image uploaded', 'success');
             };
             reader.readAsDataURL(file);
         }
 
         function loadExample() {
-            document.getElementById('keywords').value = `iphone 16 case, 450000\nmagsafe case, 165000`;
-            document.getElementById('brandName').value = 'Manchester City FC';
+            document.getElementById('keywords').value = `iphone 16 case, 450000, Tier 1\nmagsafe case, 165000, Tier 1\nshockproof case, 90000, Tier 1\ndrop protection case, 60000, Tier 2\nslim phone case, 45000, Tier 2\nofficially licensed, 0, Tier 4`;
+            document.getElementById('brandSelect').value = 'Manchester City FC';
+            onBrandSelect();
             document.getElementById('designName').value = 'Home Kit 2024/25';
             document.getElementById('lineupName').value = 'Football Club Collection';
             document.getElementById('productName').value = 'Shockproof Case';
@@ -1149,7 +1186,9 @@
                 const lines = e.target.result.split('\n');
                 const kw = lines.slice(1, 100).map(l => {
                     const p = l.split(',');
-                    return p.length >= 2 ? `${p[0].trim()}, ${p[1].trim()}` : null;
+                    if (p.length < 2) return null;
+                    const tier = p[2]?.trim() || '';
+                    return `${p[0].trim()}, ${p[1].trim()}${tier ? ', ' + tier : ''}`;
                 }).filter(Boolean).join('\n');
                 document.getElementById('keywords').value = kw;
                 showStatus(`${lines.length - 1} keywords imported`, 'success');
@@ -1173,8 +1212,13 @@
             try {
                 const keywords = document.getElementById('keywords').value.split('\n').map(l => {
                     const p = l.split(',');
-                    return { keyword: p[0]?.trim(), volume: p[1]?.trim() };
+                    return {
+                        keyword: p[0]?.trim(),
+                        volume: p[1]?.trim(),
+                        tier: p[2]?.trim() || 'Tier 2'
+                    };
                 }).filter(k => k.keyword);
+                currentKeywords = keywords;
                 const competitors = [];
                 for (let i = 1; i <= 3; i++) {
                     const title = document.getElementById(`competitor${i}-title`)?.value;
@@ -1188,14 +1232,18 @@
                         keywords,
                         productInfo: {
                             category: document.getElementById('category').value,
+                            productCode: document.getElementById('productCode').value,
                             brandName: document.getElementById('brandName').value,
                             designName: document.getElementById('designName').value,
                             lineupName: document.getElementById('lineupName').value,
                             productName: document.getElementById('productName').value,
                             deviceName: document.getElementById('deviceName').value,
                             mainMaterial: document.getElementById('mainMaterial').value,
+                            productColour: document.getElementById('productColour').value,
                             countryOfManufacture: document.getElementById('countryOfManufacture').value,
-                            keyFeatures: document.getElementById('keyFeatures').value
+                            keyFeatures: document.getElementById('keyFeatures').value,
+                            uniqueSellingPoints: document.getElementById('uniqueSellingPoints').value,
+                            milStdCertified: document.getElementById('milStdCertified').checked
                         },
                         competitors,
                         productImage: productImageBase64
@@ -1204,6 +1252,16 @@
                 const result = await response.json();
                 if (!result.success) throw new Error(result.error);
                 data = result.data;
+                currentProductInfo = {
+                    productCode: document.getElementById('productCode').value,
+                    brandName: document.getElementById('brandName').value,
+                    designName: document.getElementById('designName').value,
+                    lineupName: document.getElementById('lineupName').value,
+                    productName: document.getElementById('productName').value,
+                    deviceName: document.getElementById('deviceName').value,
+                    mainMaterial: document.getElementById('mainMaterial').value,
+                    productColour: document.getElementById('productColour').value,
+                };
                 chatHistory = [];
                 document.getElementById('empty-state').classList.add('hidden');
                 document.getElementById('results-area').classList.remove('hidden');
@@ -1234,16 +1292,95 @@
             }
             document.getElementById('description-output').textContent = data.hcdFormat || '';
             document.getElementById('backend-output').textContent = data.backendKeywords || '';
+            updateKeywordCoverage();
+        }
+
+        function updateKeywordCoverage() {
+            const block = document.getElementById('keyword-coverage-block');
+            const output = document.getElementById('keyword-coverage-output');
+            const score = document.getElementById('keyword-coverage-score');
+            if (!currentKeywords.length) { block.style.display = 'none'; return; }
+
+            // Combine all generated text into one searchable string
+            const fullText = [
+                data.title || '',
+                (data.bullets || []).join(' '),
+                data.hcdFormat || '',
+                data.backendKeywords || ''
+            ].join(' ');
+
+            // Normalise: replace hyphens with spaces so "leak-proof" matches "leak proof"
+            function normalise(str) {
+                return str.toLowerCase().replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+            }
+            const normText = normalise(fullText);
+
+            let found = 0;
+            output.innerHTML = '';
+            currentKeywords.forEach(({ keyword, volume, tier }) => {
+                const used = normText.includes(normalise(keyword));
+                if (used) found++;
+                const tag = document.createElement('span');
+                const tierLabel = tier ? ` [${tier}]` : '';
+                tag.title = (volume ? `Volume: ${Number(volume).toLocaleString()}` : '') + tierLabel;
+                tag.style.cssText = `
+                    display:inline-flex;align-items:center;gap:4px;
+                    padding:3px 8px;border-radius:12px;font-size:11px;
+                    background:${used ? 'rgba(74,163,88,0.15)' : 'rgba(220,53,69,0.12)'};
+                    color:${used ? '#2d7a3a' : '#c0392b'};
+                    border:1px solid ${used ? 'rgba(74,163,88,0.3)' : 'rgba(220,53,69,0.25)'};
+                `;
+                tag.innerHTML = `<span>${used ? '✓' : '✗'}</span> ${keyword}${tier ? `<span style="font-size:9px;opacity:0.6;margin-left:2px">${tier}</span>` : ''}`;
+                output.appendChild(tag);
+            });
+
+            score.textContent = `${found}/${currentKeywords.length} covered`;
+            block.style.display = '';
         }
 
         function copy(type) {
             let text = '';
-            if (type === 'title') text = data.title;
-            else if (type === 'bullets') text = data.bullets.map(b => b.replace(/\*\*/g, '')).join('\n');
-            else if (type === 'description') text = data.hcdFormat;
-            else if (type === 'backend') text = data.backendKeywords;
-            navigator.clipboard.writeText(text);
-            showStatus('Copied to clipboard', 'success');
+            if (type === 'title') text = data.title || '';
+            else if (type === 'bullets') text = (data.bullets || []).map(b => b.replace(/\*\*/g, '')).join('\n');
+            else if (type === 'description') text = data.hcdFormat || '';
+            else if (type === 'backend') text = data.backendKeywords || '';
+            navigator.clipboard.writeText(text).then(() => {
+                showStatus('Copied to clipboard', 'success');
+            }).catch(() => {
+                showStatus('Failed to copy to clipboard', 'error');
+            });
+        }
+
+        async function downloadDocx() {
+            const btn = document.getElementById('downloadDocxBtn');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            try {
+                const response = await fetch('/api/download-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: data.title,
+                        bullets: data.bullets,
+                        hcdFormat: data.hcdFormat,
+                        productInfo: currentProductInfo
+                    })
+                });
+                if (!response.ok) throw new Error('Failed to generate DOCX');
+                const blob = await response.blob();
+                const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || 'listing.zip';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                showStatus('Failed to download DOCX: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Download DOCX';
+            }
         }
 
         async function sendChatMessage() {
@@ -1302,7 +1439,13 @@
             const messagesEl = document.getElementById('chat-messages');
             const msg = document.createElement('div');
             msg.className = `chat-message ${role}`;
-            msg.innerHTML = `<strong>${role === 'user' ? 'You' : role === 'error' ? 'Error' : 'Claude'}:</strong>${content.replace(/\n/g, '<br>')}`;
+            const label = document.createElement('strong');
+            label.textContent = (role === 'user' ? 'You' : role === 'error' ? 'Error' : 'Claude') + ':';
+            msg.appendChild(label);
+            content.split('\n').forEach((line, i) => {
+                if (i > 0) msg.appendChild(document.createElement('br'));
+                msg.appendChild(document.createTextNode(line));
+            });
             messagesEl.appendChild(msg);
             messagesEl.scrollTop = messagesEl.scrollHeight;
             if (role !== 'error') chatHistory.push({ role, content });
@@ -1355,28 +1498,69 @@
             concepts.forEach((concept, index) => {
                 const card = document.createElement('div');
                 card.className = 'concept-card';
-                const textOverlays = Array.isArray(concept.textOverlays)
-                    ? concept.textOverlays.map(t => `<li>${t}</li>`).join('')
-                    : `<li>${concept.textOverlays}</li>`;
-                card.innerHTML = `
-                    <span class="concept-number">IMAGE ${index + 1}</span>
-                    <div class="concept-title">${concept.title}</div>
-                    <div class="concept-section">
-                        <div class="concept-section-label">Layout Plan</div>
-                        <div class="concept-section-text">${concept.layout}</div>
-                    </div>
-                    <div class="concept-section">
-                        <div class="concept-section-label">Text Overlays</div>
-                        <div class="concept-section-text"><ul style="margin:4px 0;padding-left:18px">${textOverlays}</ul></div>
-                    </div>
-                    <div class="concept-section">
-                        <div class="concept-section-label">Gemini Prompt</div>
-                        <div class="prompt-box" onclick="copyPrompt(${index})">
-                            <button class="copy-prompt-btn">Copy</button>
-                            ${concept.geminiPrompt}
-                        </div>
-                    </div>
-                `;
+
+                const numberSpan = document.createElement('span');
+                numberSpan.className = 'concept-number';
+                numberSpan.textContent = 'IMAGE ' + (index + 1);
+                card.appendChild(numberSpan);
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'concept-title';
+                titleDiv.textContent = concept.title;
+                card.appendChild(titleDiv);
+
+                // Layout section
+                const layoutSection = document.createElement('div');
+                layoutSection.className = 'concept-section';
+                const layoutLabel = document.createElement('div');
+                layoutLabel.className = 'concept-section-label';
+                layoutLabel.textContent = 'Layout Plan';
+                const layoutText = document.createElement('div');
+                layoutText.className = 'concept-section-text';
+                layoutText.textContent = concept.layout;
+                layoutSection.appendChild(layoutLabel);
+                layoutSection.appendChild(layoutText);
+                card.appendChild(layoutSection);
+
+                // Text Overlays section
+                const overlaySection = document.createElement('div');
+                overlaySection.className = 'concept-section';
+                const overlayLabel = document.createElement('div');
+                overlayLabel.className = 'concept-section-label';
+                overlayLabel.textContent = 'Text Overlays';
+                const overlayText = document.createElement('div');
+                overlayText.className = 'concept-section-text';
+                const ul = document.createElement('ul');
+                ul.style.cssText = 'margin:4px 0;padding-left:18px';
+                const overlayItems = Array.isArray(concept.textOverlays) ? concept.textOverlays : [concept.textOverlays];
+                overlayItems.forEach(t => {
+                    const li = document.createElement('li');
+                    li.textContent = t;
+                    ul.appendChild(li);
+                });
+                overlayText.appendChild(ul);
+                overlaySection.appendChild(overlayLabel);
+                overlaySection.appendChild(overlayText);
+                card.appendChild(overlaySection);
+
+                // Gemini Prompt section
+                const promptSection = document.createElement('div');
+                promptSection.className = 'concept-section';
+                const promptLabel = document.createElement('div');
+                promptLabel.className = 'concept-section-label';
+                promptLabel.textContent = 'Gemini Prompt';
+                const promptBox = document.createElement('div');
+                promptBox.className = 'prompt-box';
+                promptBox.onclick = () => copyPrompt(index);
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'copy-prompt-btn';
+                copyBtn.textContent = 'Copy';
+                promptBox.appendChild(copyBtn);
+                promptBox.appendChild(document.createTextNode(concept.geminiPrompt));
+                promptSection.appendChild(promptLabel);
+                promptSection.appendChild(promptBox);
+                card.appendChild(promptSection);
+
                 grid.appendChild(card);
             });
         }
